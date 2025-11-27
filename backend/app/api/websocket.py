@@ -80,18 +80,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 }
                 await manager.broadcast(user_message)
 
-                # Echo bot response (for Phase 2 testing)
-                # Only generate ONE echo response per message, not per client
-                if message_data.get("content"):
-                    echo_response = {
-                        "type": "message",
-                        "content": f"Echo: {message_data.get('content')}",
-                        "sender": "bot",
-                        "timestamp": None
-                    }
-                    # Broadcast the bot's echo response once to all clients
-                    await manager.broadcast(echo_response)
-
             except json.JSONDecodeError:
                 logger.error("Invalid JSON received")
                 await websocket.send_text(
