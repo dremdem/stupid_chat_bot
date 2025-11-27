@@ -10,6 +10,7 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 2000;
+    this.shouldReconnect = true;
   }
 
   /**
@@ -17,7 +18,14 @@ class WebSocketService {
    * @param {string} url - WebSocket server URL
    */
   connect(url = 'ws://localhost:8000/ws/chat') {
+    // Prevent multiple connections
+    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
+      console.log('WebSocket already connected or connecting, skipping...');
+      return;
+    }
+
     try {
+      this.shouldReconnect = true;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
@@ -43,7 +51,10 @@ class WebSocketService {
       this.ws.onclose = () => {
         console.log('WebSocket disconnected');
         this.notifyConnectionHandlers('disconnected');
-        this.attemptReconnect(url);
+        // Only attempt reconnect if not explicitly disconnected
+        if (this.shouldReconnect) {
+          this.attemptReconnect(url);
+        }
       };
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
@@ -132,6 +143,7 @@ class WebSocketService {
    * Disconnect from the WebSocket server
    */
   disconnect() {
+    this.shouldReconnect = false;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
