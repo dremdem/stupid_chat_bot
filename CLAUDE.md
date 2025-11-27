@@ -13,8 +13,8 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
   - AI integration with streaming responses
   - RESTful API design
 
-- **Frontend**: React with Vite
-  - Modern hooks-based components
+- **Frontend**: [React](https://react.dev/) with [Vite](https://vite.dev/)
+  - Modern [hooks](https://react.dev/reference/react/hooks)-based components (Hooks are functions that let you use state and other React features without writing classes)
   - Real-time WebSocket communication
   - Rich markdown and code rendering
 
@@ -28,7 +28,7 @@ Expected structure:
 ```bash
 # Backend
 cd backend
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 uvicorn app.main:app --reload
 
 # Frontend

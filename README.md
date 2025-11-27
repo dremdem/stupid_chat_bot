@@ -2,6 +2,15 @@
 
 The most stupid chat bot with AI - a simple, straightforward chat application that connects users with an AI assistant.
 
+## Use Cases
+
+This chat bot is designed for casual, collaborative interactions:
+
+- **Multi-user chat without authentication** - No login required, just jump in and start chatting
+- **Anonymous or named participation** - Users can choose a display name or stay anonymous
+- **AI responds when mentioned/tagged** - The AI will answer when specifically called upon using @mentions or tags
+- **Persistent history while users are online** - Chat history is maintained as long as at least one user remains connected
+
 ## Tech Stack
 
 ### Backend
@@ -25,27 +34,34 @@ The most stupid chat bot with AI - a simple, straightforward chat application th
 
 ### High-Level Overview
 
-```
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│                 │         │                 │         │                 │
-│  React Frontend │◄───────►│  FastAPI Backend│◄───────►│   AI Service    │
-│                 │         │                 │         │   (LLM API)     │
-│  - Chat UI      │  HTTP/  │  - WebSocket    │  HTTP   │                 │
-│  - Message Flow │  WS     │  - Chat Logic   │  API    │  - Claude/GPT   │
-│  - State Mgmt   │         │  - AI Proxy     │         │  - Streaming    │
-│                 │         │                 │         │                 │
-└─────────────────┘         └─────────────────┘         └─────────────────┘
-                                     │
-                                     │
-                            ┌────────▼────────┐
-                            │                 │
-                            │  Storage Layer  │
-                            │                 │
-                            │  - Chat History │
-                            │  - User Sessions│
-                            │  - Metadata     │
-                            │                 │
-                            └─────────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["React Frontend"]
+        UI["Chat UI"]
+        Flow["Message Flow"]
+        State["State Mgmt"]
+    end
+
+    subgraph Backend["FastAPI Backend"]
+        WS["WebSocket"]
+        Logic["Chat Logic"]
+        Proxy["AI Proxy"]
+    end
+
+    subgraph AI["AI Service (LLM API)"]
+        Model["Claude/GPT"]
+        Stream["Streaming"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        History["Chat History"]
+        Sessions["User Sessions"]
+        Meta["Metadata"]
+    end
+
+    Frontend <-->|HTTP/WS| Backend
+    Backend <-->|HTTP API| AI
+    Backend --> Storage
 ```
 
 ### Component Details
@@ -55,16 +71,14 @@ The most stupid chat bot with AI - a simple, straightforward chat application th
 - **MessageList** - Scrollable message history with virtualization
 - **MessageBubble** - Individual message display with markdown support
 - **InputBox** - User input with auto-resize and keyboard shortcuts
-- **TypingIndicator** - Animated indicator for AI responses
+- **TypingIndicator** - Animated indicator shown when AI is generating any response
 - **ChatHeader** - Title, status, and controls
-- **Sidebar** (optional) - Chat history and settings
 
 #### Backend Services
 - **WebSocket Manager** - Handles real-time connections
 - **Chat Service** - Business logic for message processing
 - **AI Client** - Wrapper for LLM API calls with streaming
 - **History Manager** - Storage and retrieval of conversations
-- **Authentication** (optional) - User management and sessions
 
 ## Fancy Chat Component
 
@@ -355,7 +369,8 @@ For the "most fancy" chat experience, we recommend:
 ## Getting Started
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.12
+- [uv](https://github.com/astral-sh/uv) - Fast Python package installer
 - Node.js 18+
 - Docker (optional)
 
@@ -377,4 +392,4 @@ This is the "stupid chat bot" - contributions are welcome! Please feel free to:
 
 ## License
 
-(To be determined)
+MIT License - see [LICENSE](LICENSE) file for details
