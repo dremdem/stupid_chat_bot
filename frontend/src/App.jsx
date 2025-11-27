@@ -13,8 +13,8 @@ function App() {
     // Connect to WebSocket
     websocketService.connect();
 
-    // Handle incoming messages
-    websocketService.onMessage((message) => {
+    // Handle incoming messages and get cleanup function
+    const cleanupMessageHandler = websocketService.onMessage((message) => {
       // Skip connection system messages (they're redundant with connection status)
       if (message.type === 'system' && message.system_type === 'connection') {
         return;
@@ -29,13 +29,15 @@ function App() {
       ]);
     });
 
-    // Handle connection status changes
-    websocketService.onConnectionChange((status) => {
+    // Handle connection status changes and get cleanup function
+    const cleanupConnectionHandler = websocketService.onConnectionChange((status) => {
       setConnectionStatus(status);
     });
 
     // Cleanup on unmount
     return () => {
+      cleanupMessageHandler();
+      cleanupConnectionHandler();
       websocketService.disconnect();
     };
   }, []);

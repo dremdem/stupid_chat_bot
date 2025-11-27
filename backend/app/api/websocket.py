@@ -71,19 +71,17 @@ async def websocket_endpoint(websocket: WebSocket):
             try:
                 message_data = json.loads(data)
 
-                # Echo back for now (Phase 2 requirement)
-                # In Phase 3, this will be replaced with AI integration
-                response = {
+                # Broadcast user message to all connected clients
+                user_message = {
                     "type": "message",
                     "content": message_data.get("content", ""),
                     "sender": message_data.get("sender", "user"),
                     "timestamp": message_data.get("timestamp")
                 }
-
-                # Broadcast to all connected clients
-                await manager.broadcast(response)
+                await manager.broadcast(user_message)
 
                 # Echo bot response (for Phase 2 testing)
+                # Only generate ONE echo response per message, not per client
                 if message_data.get("content"):
                     echo_response = {
                         "type": "message",
@@ -91,6 +89,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "sender": "bot",
                         "timestamp": None
                     }
+                    # Broadcast the bot's echo response once to all clients
                     await manager.broadcast(echo_response)
 
             except json.JSONDecodeError:

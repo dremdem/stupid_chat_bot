@@ -83,17 +83,33 @@ class WebSocketService {
   /**
    * Register a handler for incoming messages
    * @param {Function} handler - Callback function to handle messages
+   * @returns {Function} Cleanup function to remove the handler
    */
   onMessage(handler) {
     this.messageHandlers.push(handler);
+    // Return cleanup function
+    return () => {
+      const index = this.messageHandlers.indexOf(handler);
+      if (index > -1) {
+        this.messageHandlers.splice(index, 1);
+      }
+    };
   }
 
   /**
    * Register a handler for connection status changes
    * @param {Function} handler - Callback function to handle connection changes
+   * @returns {Function} Cleanup function to remove the handler
    */
   onConnectionChange(handler) {
     this.connectionHandlers.push(handler);
+    // Return cleanup function
+    return () => {
+      const index = this.connectionHandlers.indexOf(handler);
+      if (index > -1) {
+        this.connectionHandlers.splice(index, 1);
+      }
+    };
   }
 
   /**
