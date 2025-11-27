@@ -22,19 +22,57 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
 
 ## Development Commands
 
-*To be added in Phase 1 during project setup.*
-
-Expected structure:
+### Backend
 ```bash
-# Backend
 cd backend
 uv pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# Frontend
+The backend will be available at `http://localhost:8000`
+
+API documentation available at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+### Frontend
+```bash
 cd frontend
 npm install
 npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+### Docker (Recommended for local development)
+```bash
+docker-compose up --build
+```
+
+This will start both backend and frontend services:
+- Backend: `http://localhost:8000`
+- Frontend: `http://localhost:5173`
+
+### Linting and Formatting
+
+#### Backend
+```bash
+cd backend
+# Format code with black
+black .
+
+# Check with ruff
+ruff check .
+```
+
+#### Frontend
+```bash
+cd frontend
+# Lint with ESLint
+npm run lint
+
+# Format with Prettier (add to package.json if needed)
+npx prettier --write .
 ```
 
 ## Architecture
@@ -56,7 +94,18 @@ See [README.md](./README.md) for detailed architecture diagrams and component de
 
 ## Implementation Status
 
-The project is currently in **Phase 0** (Documentation Phase). See README.md for the complete 6-phase implementation roadmap.
+The project is currently in **Phase 1** (Foundation Setup - Completed). See README.md for the complete 6-phase implementation roadmap.
+
+### Completed Phases
+- **Phase 0**: Documentation Phase ✓
+- **Phase 1**: Foundation Setup ✓
+  - Backend structure with FastAPI
+  - Frontend structure with React + Vite
+  - Docker setup
+  - Linting and formatting configuration
+
+### Next Phase
+- **Phase 2**: Basic Chat Functionality - WebSocket implementation and simple chat UI
 
 ## Important Notes
 
