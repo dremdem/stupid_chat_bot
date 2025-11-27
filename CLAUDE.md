@@ -8,7 +8,7 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python 3.9+)
+- **Backend**: FastAPI (Python 3.12)
   - WebSocket support for real-time messaging
   - AI integration with streaming responses
   - RESTful API design
