@@ -206,7 +206,7 @@ For the "most fancy" chat experience, we recommend:
 
 **Deliverables**:
 - Users can type and see messages in real-time
-- Echo bot responds to test WebSocket functionality
+- Messages are broadcast to all connected users
 
 ---
 

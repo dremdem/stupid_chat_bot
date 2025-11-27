@@ -1,6 +1,7 @@
 """Main FastAPI application."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api import websocket
 
 app = FastAPI(
     title="Stupid Chat Bot API",
@@ -16,6 +17,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(websocket.router)
 
 
 @app.get("/")
