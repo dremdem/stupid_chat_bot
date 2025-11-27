@@ -54,12 +54,13 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
 
     try:
-        # Send welcome message
+        # Send welcome message only to this client
         await websocket.send_text(
             json.dumps({
                 "type": "system",
                 "content": "Connected to chat server",
-                "timestamp": None
+                "timestamp": None,
+                "system_type": "connection"
             })
         )
 

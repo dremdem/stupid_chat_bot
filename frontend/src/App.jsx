@@ -15,6 +15,11 @@ function App() {
 
     // Handle incoming messages
     websocketService.onMessage((message) => {
+      // Skip connection system messages (they're redundant with connection status)
+      if (message.type === 'system' && message.system_type === 'connection') {
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
