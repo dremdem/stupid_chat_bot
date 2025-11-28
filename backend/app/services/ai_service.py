@@ -67,8 +67,12 @@ class AIService:
             return
 
         try:
-            # Build messages list
-            messages = []
+            # Build messages list with system message
+            system_prompt = (
+                "You are a helpful assistant in a chat application. "
+                "Provide clear, concise, and friendly responses."
+            )
+            messages = [{"role": "system", "content": system_prompt}]
 
             # Add conversation history if provided
             if conversation_history:
@@ -80,16 +84,11 @@ class AIService:
             messages.append({"role": "user", "content": message})
 
             # Stream the response using LiteLLM
-            system_prompt = (
-                "You are a helpful assistant in a chat application. "
-                "Provide clear, concise, and friendly responses."
-            )
             response = await acompletion(
                 model=self.model,
                 messages=messages,
                 stream=True,
                 max_tokens=1024,
-                system=system_prompt,
             )
 
             async for chunk in response:
