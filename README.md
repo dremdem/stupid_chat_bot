@@ -34,7 +34,7 @@ This chat bot is designed for casual, collaborative interactions:
 
 - **Multi-user chat without authentication** - No login required, just jump in and start chatting
 - **Anonymous or named participation** - Users can choose a display name or stay anonymous
-- **AI responds when mentioned/tagged** - The AI will answer when specifically called upon using @mentions or tags
+- **AI responds to every message** - The AI assistant participates in every conversation automatically
 - **Persistent history while users are online** - Chat history is maintained as long as at least one user remains connected
 
 ## Tech Stack
@@ -53,8 +53,24 @@ This chat bot is designed for casual, collaborative interactions:
   - Rich ecosystem of chat-related libraries
 
 ### AI Integration
-- LLM API integration (OpenAI, Anthropic, or similar)
-- Streaming response support for real-time message generation
+- **LiteLLM** - Universal LLM API library supporting multiple providers
+  - Unified interface for 100+ AI providers
+  - OpenAI-compatible API format
+  - Built-in streaming support for real-time responses
+  - Cost tracking and budget management
+  - Automatic retries and fallback logic
+
+- **Supported AI Providers** (Top 5):
+  - **Anthropic** (Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku)
+  - **OpenAI** (GPT-4 Turbo, GPT-4o, GPT-3.5 Turbo)
+  - **Google** (Gemini 1.5 Pro, Gemini 1.5 Flash)
+  - **Meta** (Llama 3.1 - 405B, 70B, 8B)
+  - **DeepSeek** (DeepSeek-V3, DeepSeek-Coder)
+
+- **Features**:
+  - Easy provider switching via environment variables
+  - Streaming response support for real-time message generation
+  - Conversation context management
 
 ## Architecture
 
@@ -273,30 +289,34 @@ For the "most fancy" chat experience, we recommend:
 ### Phase 3: AI Integration (Week 3)
 **Goal**: Connect to LLM and stream responses
 
-- [ ] Backend: AI service integration
-  - Choose AI provider (OpenAI, Anthropic, etc.)
-  - Implement API client with streaming
-  - Environment variable configuration for API keys
+- [x] Backend: AI service integration
+  - [x] Universal multi-provider support via LiteLLM
+  - [x] Support for top 5 AI providers (Anthropic, OpenAI, Google, Meta, DeepSeek)
+  - [x] Streaming API client implementation
+  - [x] Environment variable configuration for API keys
+  - [x] Provider and model selection via config
 
-- [ ] Backend: Chat endpoint with AI
-  - Process user messages
-  - Stream AI responses via WebSocket
-  - Handle API errors gracefully
+- [x] Backend: Chat endpoint with AI
+  - [x] Process user messages and respond to all messages
+  - [x] Stream AI responses via WebSocket
+  - [x] Handle API errors gracefully
+  - [x] Conversation history management
 
-- [ ] Frontend: Handle streaming responses
-  - Display partial messages as they arrive
-  - Typing indicator during generation
-  - Stop generation button
+- [x] Frontend: Handle streaming responses
+  - [x] Display partial messages as they arrive
+  - [x] Typing indicator during generation
+  - [x] Real-time streaming message handling
 
-- [ ] Frontend: Message formatting
-  - Markdown rendering
-  - Code syntax highlighting
-  - Copy button for code blocks
+- [x] Frontend: Message formatting
+  - [x] Markdown rendering with react-markdown
+  - [x] Code syntax highlighting with highlight.js
+  - [x] GitHub Flavored Markdown support
 
 **Deliverables**:
-- Functional AI chat bot
-- Streaming responses visible in real-time
-- Proper error messages for API failures
+- ✅ Functional AI chat bot with multi-provider support
+- ✅ Streaming responses visible in real-time
+- ✅ Proper error messages for API failures
+- ✅ Easy provider switching via environment variables
 
 ---
 
@@ -440,7 +460,44 @@ For the "most fancy" chat experience, we recommend:
 
 ### Environment Variables
 
-(To be completed in Phase 1)
+See `backend/.env.example` for all available configuration options.
+
+**Required for AI functionality:**
+
+```bash
+# Choose your AI provider
+AI_PROVIDER=anthropic  # Options: anthropic, openai, google, meta, deepseek
+
+# Set the API key for your chosen provider
+ANTHROPIC_API_KEY=your-anthropic-key-here
+# OR
+OPENAI_API_KEY=your-openai-key-here
+# OR
+GOOGLE_API_KEY=your-google-key-here
+```
+
+**Optional:**
+
+```bash
+# Override the default model for your provider
+AI_MODEL=claude-3-opus-20240229
+# If not set, uses provider defaults:
+#   anthropic: claude-3-5-sonnet-20241022
+#   openai: gpt-4-turbo
+#   google: gemini-1.5-pro
+#   meta: llama-3.1-70b
+#   deepseek: deepseek-chat
+```
+
+**Switching Providers:**
+
+To switch from one AI provider to another:
+1. Update `AI_PROVIDER` in your `.env` file
+2. Set the corresponding API key environment variable
+3. Optionally set `AI_MODEL` to use a specific model
+4. Restart the backend server
+
+No code changes required!
 
 ## Contributing
 

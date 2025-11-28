@@ -6,25 +6,27 @@ import './MessageList.css'
 /**
  * MessageList component - displays the list of chat messages
  */
-function MessageList({ messages }) {
+function MessageList({ messages, isTyping, TypingIndicator }) {
   const messagesEndRef = useRef(null)
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or typing status changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isTyping])
 
   return (
     <div className="message-list">
       {messages.length === 0 ? (
         <div className="empty-state">
           <p>No messages yet. Start a conversation!</p>
+          <p className="hint">The AI assistant will respond to every message!</p>
         </div>
       ) : (
         messages.map((message, index) => (
           <MessageBubble key={message.id || index} message={message} />
         ))
       )}
+      {isTyping && TypingIndicator && <TypingIndicator />}
       <div ref={messagesEndRef} />
     </div>
   )
@@ -40,6 +42,8 @@ MessageList.propTypes = {
       type: PropTypes.string,
     })
   ).isRequired,
+  isTyping: PropTypes.bool,
+  TypingIndicator: PropTypes.elementType,
 }
 
 export default MessageList
