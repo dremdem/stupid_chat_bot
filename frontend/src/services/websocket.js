@@ -4,13 +4,13 @@
 
 class WebSocketService {
   constructor() {
-    this.ws = null;
-    this.messageHandlers = [];
-    this.connectionHandlers = [];
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 2000;
-    this.shouldReconnect = true;
+    this.ws = null
+    this.messageHandlers = []
+    this.connectionHandlers = []
+    this.reconnectAttempts = 0
+    this.maxReconnectAttempts = 5
+    this.reconnectDelay = 2000
+    this.shouldReconnect = true
   }
 
   /**
@@ -19,46 +19,49 @@ class WebSocketService {
    */
   connect(url = 'ws://localhost:8000/ws/chat') {
     // Prevent multiple connections
-    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-      console.log('WebSocket already connected or connecting, skipping...');
-      return;
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)
+    ) {
+      console.log('WebSocket already connected or connecting, skipping...')
+      return
     }
 
     try {
-      this.shouldReconnect = true;
-      this.ws = new WebSocket(url);
+      this.shouldReconnect = true
+      this.ws = new WebSocket(url)
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
-        this.reconnectAttempts = 0;
-        this.notifyConnectionHandlers('connected');
-      };
+        console.log('WebSocket connected')
+        this.reconnectAttempts = 0
+        this.notifyConnectionHandlers('connected')
+      }
 
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = event => {
         try {
-          const message = JSON.parse(event.data);
-          this.notifyMessageHandlers(message);
+          const message = JSON.parse(event.data)
+          this.notifyMessageHandlers(message)
         } catch (error) {
-          console.error('Error parsing message:', error);
+          console.error('Error parsing message:', error)
         }
-      };
+      }
 
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        this.notifyConnectionHandlers('error');
-      };
+      this.ws.onerror = error => {
+        console.error('WebSocket error:', error)
+        this.notifyConnectionHandlers('error')
+      }
 
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        this.notifyConnectionHandlers('disconnected');
+        console.log('WebSocket disconnected')
+        this.notifyConnectionHandlers('disconnected')
         // Only attempt reconnect if not explicitly disconnected
         if (this.shouldReconnect) {
-          this.attemptReconnect(url);
+          this.attemptReconnect(url)
         }
-      };
+      }
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
-      this.notifyConnectionHandlers('error');
+      console.error('Error connecting to WebSocket:', error)
+      this.notifyConnectionHandlers('error')
     }
   }
 
@@ -68,14 +71,14 @@ class WebSocketService {
    */
   attemptReconnect(url) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
+      this.reconnectAttempts++
       console.log(
         `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      );
-      setTimeout(() => this.connect(url), this.reconnectDelay);
+      )
+      setTimeout(() => this.connect(url), this.reconnectDelay)
     } else {
-      console.error('Max reconnection attempts reached');
-      this.notifyConnectionHandlers('failed');
+      console.error('Max reconnection attempts reached')
+      this.notifyConnectionHandlers('failed')
     }
   }
 
@@ -85,9 +88,9 @@ class WebSocketService {
    */
   sendMessage(message) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+      this.ws.send(JSON.stringify(message))
     } else {
-      console.error('WebSocket is not connected');
+      console.error('WebSocket is not connected')
     }
   }
 
@@ -97,14 +100,14 @@ class WebSocketService {
    * @returns {Function} Cleanup function to remove the handler
    */
   onMessage(handler) {
-    this.messageHandlers.push(handler);
+    this.messageHandlers.push(handler)
     // Return cleanup function
     return () => {
-      const index = this.messageHandlers.indexOf(handler);
+      const index = this.messageHandlers.indexOf(handler)
       if (index > -1) {
-        this.messageHandlers.splice(index, 1);
+        this.messageHandlers.splice(index, 1)
       }
-    };
+    }
   }
 
   /**
@@ -113,14 +116,14 @@ class WebSocketService {
    * @returns {Function} Cleanup function to remove the handler
    */
   onConnectionChange(handler) {
-    this.connectionHandlers.push(handler);
+    this.connectionHandlers.push(handler)
     // Return cleanup function
     return () => {
-      const index = this.connectionHandlers.indexOf(handler);
+      const index = this.connectionHandlers.indexOf(handler)
       if (index > -1) {
-        this.connectionHandlers.splice(index, 1);
+        this.connectionHandlers.splice(index, 1)
       }
-    };
+    }
   }
 
   /**
@@ -128,7 +131,7 @@ class WebSocketService {
    * @param {Object} message - Message to distribute
    */
   notifyMessageHandlers(message) {
-    this.messageHandlers.forEach((handler) => handler(message));
+    this.messageHandlers.forEach(handler => handler(message))
   }
 
   /**
@@ -136,17 +139,17 @@ class WebSocketService {
    * @param {string} status - Connection status
    */
   notifyConnectionHandlers(status) {
-    this.connectionHandlers.forEach((handler) => handler(status));
+    this.connectionHandlers.forEach(handler => handler(status))
   }
 
   /**
    * Disconnect from the WebSocket server
    */
   disconnect() {
-    this.shouldReconnect = false;
+    this.shouldReconnect = false
     if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+      this.ws.close()
+      this.ws = null
     }
   }
 
@@ -155,8 +158,8 @@ class WebSocketService {
    * @returns {boolean} Connection status
    */
   isConnected() {
-    return this.ws && this.ws.readyState === WebSocket.OPEN;
+    return this.ws && this.ws.readyState === WebSocket.OPEN
   }
 }
 
-export default new WebSocketService();
+export default new WebSocketService()
