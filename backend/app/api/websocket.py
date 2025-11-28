@@ -1,9 +1,10 @@
 """WebSocket endpoints for real-time chat functionality."""
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import List
 import json
 import logging
+from typing import List
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 

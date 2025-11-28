@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import './ChatHeader.css';
 
 /**
@@ -46,5 +47,9 @@ function ChatHeader({ status }) {
     </div>
   );
 }
+
+ChatHeader.propTypes = {
+  status: PropTypes.string.isRequired,
+};
 
 export default ChatHeader;

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import './MessageBubble.css';
 
 /**
@@ -31,5 +32,14 @@ function MessageBubble({ message }) {
     </div>
   );
 }
+
+MessageBubble.propTypes = {
+  message: PropTypes.shape({
+    content: PropTypes.string.isRequired,
+    sender: PropTypes.string,
+    timestamp: PropTypes.string,
+    type: PropTypes.string,
+  }).isRequired,
+};
 
 export default MessageBubble;

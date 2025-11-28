@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import './InputBox.css';
 
 /**
@@ -44,5 +45,10 @@ function InputBox({ onSendMessage, disabled }) {
     </form>
   );
 }
+
+InputBox.propTypes = {
+  onSendMessage: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+};
 
 export default InputBox;

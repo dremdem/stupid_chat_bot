@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import MessageBubble from './MessageBubble';
 import './MessageList.css';
 
@@ -28,5 +29,17 @@ function MessageList({ messages }) {
     </div>
   );
 }
+
+MessageList.propTypes = {
+  messages: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      content: PropTypes.string.isRequired,
+      sender: PropTypes.string,
+      timestamp: PropTypes.string,
+      type: PropTypes.string,
+    })
+  ).isRequired,
+};
 
 export default MessageList;
