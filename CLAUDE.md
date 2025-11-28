@@ -140,6 +140,14 @@ The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See
 
 ## Important Notes
 
+### Git Workflow
+- **NEVER push directly to the master branch**
+- Always create a feature branch for your changes
+- Push to the feature branch and create a Pull Request
+- Wait for CI checks to pass before merging
+- All changes must go through the PR review process
+
+### Development Guidelines
 - Follow the phased implementation approach outlined in README.md
 - Prioritize simplicity ("stupid" chat bot philosophy)
 - Use TypeScript for frontend in later phases
