@@ -1,9 +1,10 @@
 """AI service for handling LLM API interactions with streaming support."""
 
 import logging
+import os
 from typing import AsyncGenerator
 
-from anthropic import AsyncAnthropic
+from litellm import acompletion
 
 from app.config import settings
 
@@ -11,22 +12,42 @@ logger = logging.getLogger(__name__)
 
 
 class AIService:
-    """Service for interacting with AI APIs."""
+    """Service for interacting with AI APIs via LiteLLM."""
 
     def __init__(self):
         """Initialize the AI service with the configured provider."""
         self.provider = settings.ai_provider
-        if self.provider == "anthropic":
-            if not settings.anthropic_api_key:
-                logger.warning(
-                    "ANTHROPIC_API_KEY not set. AI functionality will be disabled."
-                )
-                self.client = None
-            else:
-                self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+        self.model = settings.selected_model
+
+        # Set API keys in environment for LiteLLM
+        if settings.anthropic_api_key:
+            os.environ["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
+        if settings.openai_api_key:
+            os.environ["OPENAI_API_KEY"] = settings.openai_api_key
+        if settings.google_api_key:
+            os.environ["GOOGLE_API_KEY"] = settings.google_api_key
+
+        # Validate configuration
+        if not self._has_valid_api_key():
+            logger.warning(
+                f"No API key configured for provider '{self.provider}'. "
+                "AI functionality will be disabled."
+            )
+            self.enabled = False
         else:
-            logger.error(f"Unsupported AI provider: {self.provider}")
-            self.client = None
+            self.enabled = True
+            logger.info(
+                f"AI service initialized with provider: {self.provider}, model: {self.model}"
+            )
+
+    def _has_valid_api_key(self) -> bool:
+        """Check if a valid API key exists for the selected provider."""
+        key_map = {
+            "anthropic": settings.anthropic_api_key,
+            "openai": settings.openai_api_key,
+            "google": settings.google_api_key,
+        }
+        return bool(key_map.get(self.provider, False))
 
     async def generate_response_stream(
         self, message: str, conversation_history: list[dict] | None = None
@@ -41,8 +62,8 @@ class AIService:
         Yields:
             Chunks of the AI's response as they are generated
         """
-        if not self.client:
-            yield "Error: AI service is not configured. Please set ANTHROPIC_API_KEY."
+        if not self.enabled:
+            yield f"Error: AI service is not configured. Please set API key for {self.provider}."
             return
 
         try:
@@ -58,15 +79,22 @@ class AIService:
             # Add current message
             messages.append({"role": "user", "content": message})
 
-            # Stream the response
-            async with self.client.messages.stream(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=1024,
+            # Stream the response using LiteLLM
+            system_prompt = (
+                "You are a helpful assistant in a chat application. "
+                "Provide clear, concise, and friendly responses."
+            )
+            response = await acompletion(
+                model=self.model,
                 messages=messages,
-                system="You are a helpful assistant in a chat application. Provide clear, concise, and friendly responses.",
-            ) as stream:
-                async for text in stream.text_stream:
-                    yield text
+                stream=True,
+                max_tokens=1024,
+                system=system_prompt,
+            )
+
+            async for chunk in response:
+                if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
 
         except Exception as e:
             logger.error(f"Error generating AI response: {e}")

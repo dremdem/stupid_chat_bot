@@ -22,13 +22,34 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
 
     # AI Configuration
-    ai_provider: str = "anthropic"
+    ai_provider: str = "anthropic"  # Options: anthropic, openai, google, meta, deepseek
+    ai_model: str = ""  # Optional: Override default model for provider
+
+    # Provider-specific API keys
     anthropic_api_key: str = ""
+    openai_api_key: str = ""
+    google_api_key: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
+
+    @property
+    def selected_model(self) -> str:
+        """Get the model name based on provider and configuration."""
+        if self.ai_model:
+            return self.ai_model
+
+        # Provider defaults
+        defaults = {
+            "anthropic": "claude-3-5-sonnet-20241022",
+            "openai": "gpt-4-turbo",
+            "google": "gemini-1.5-pro",
+            "meta": "llama-3.1-70b",
+            "deepseek": "deepseek-chat",
+        }
+        return defaults.get(self.ai_provider, "claude-3-5-sonnet-20241022")
 
 
 # Global settings instance

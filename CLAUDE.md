@@ -18,7 +18,10 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
   - Real-time WebSocket communication
   - Rich markdown and code rendering
 
-- **AI Integration**: LLM APIs (OpenAI, Anthropic, or similar)
+- **AI Integration**: LiteLLM - Universal LLM library supporting multiple providers
+  - Supports: Anthropic, OpenAI, Google, Meta, DeepSeek
+  - Provider switching via environment variables
+  - Streaming support for real-time responses
 
 ## Development Commands
 
@@ -118,7 +121,7 @@ See [README.md](./README.md) for detailed architecture diagrams and component de
 
 ## Implementation Status
 
-The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See README.md for the complete 7-phase implementation roadmap.
+The project is currently in **Phase 3** (AI Integration - Complete). See README.md for the complete 7-phase implementation roadmap.
 
 ### Completed Phases
 - **Phase 0**: Documentation Phase ✓
@@ -128,15 +131,26 @@ The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See
   - Docker setup
   - Linting and formatting configuration
 
-### Current Phase
-- **Phase 1.5**: Code Quality & CI (In Progress)
+- **Phase 1.5**: Code Quality & CI ✓
   - Pre-commit hooks for code quality
   - GitHub Actions CI workflow
   - Security scanning (Gitleaks, Trivy)
   - Development dependencies
 
+- **Phase 2**: Basic Chat Functionality ✓
+  - WebSocket implementation
+  - Real-time messaging
+  - Message broadcasting
+
+- **Phase 3**: AI Integration ✓
+  - Universal multi-provider support via LiteLLM
+  - Support for top 5 AI providers (Anthropic, OpenAI, Google, Meta, DeepSeek)
+  - Streaming responses with typing indicators
+  - Markdown rendering with code highlighting
+  - Easy provider switching via environment variables
+
 ### Next Phase
-- **Phase 2**: Basic Chat Functionality - WebSocket implementation and simple chat UI
+- **Phase 4**: Enhanced UI/UX - Animations, themes, and polished user experience
 
 ## Important Notes
 
@@ -144,6 +158,10 @@ The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See
 - **NEVER push directly to the master branch**
 - Always create a feature branch for your changes
 - Push to the feature branch and create a Pull Request
+- **ALWAYS check CI checks after pushing code**
+  - Go to the PR page on GitHub
+  - Verify all workflow checks are passing (green checkmarks)
+  - If checks fail, review the error logs and fix issues before requesting review
 - Wait for CI checks to pass before merging
 - All changes must go through the PR review process
 
@@ -155,3 +173,37 @@ The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See
 - Test WebSocket connections thoroughly
 - Follow security best practices for API key management
 - Consider rate limiting for AI API calls
+
+### AI Provider Configuration
+
+The application supports multiple AI providers through LiteLLM. To switch providers:
+
+1. **Set environment variables in `.env`:**
+   ```bash
+   AI_PROVIDER=anthropic  # Options: anthropic, openai, google, meta, deepseek
+   ANTHROPIC_API_KEY=your-key-here  # Use the key for your chosen provider
+   ```
+
+2. **Available providers and their default models:**
+   - `anthropic`: claude-3-5-sonnet-20241022
+   - `openai`: gpt-4-turbo
+   - `google`: gemini-1.5-pro
+   - `meta`: llama-3.1-70b
+   - `deepseek`: deepseek-chat
+
+3. **Override default model (optional):**
+   ```bash
+   AI_MODEL=claude-3-opus-20240229
+   ```
+
+4. **Restart the backend:**
+   ```bash
+   # If using Docker
+   docker-compose restart backend
+
+   # If running locally
+   cd backend
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+No code changes are required to switch providers - it's all configuration-based!

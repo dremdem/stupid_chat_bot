@@ -22,7 +22,6 @@ function MessageBubble({ message }) {
 
   // Regular chat messages
   const isAssistant = sender === 'assistant'
-  const isUser = sender === 'user'
   const bubbleClass = `message-bubble ${isAssistant ? 'assistant' : 'user'}`
 
   return (
