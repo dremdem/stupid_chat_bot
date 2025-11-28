@@ -19,7 +19,7 @@ function MessageList({ messages, isTyping, TypingIndicator }) {
       {messages.length === 0 ? (
         <div className="empty-state">
           <p>No messages yet. Start a conversation!</p>
-          <p className="hint">Try mentioning @ai or @bot in your message!</p>
+          <p className="hint">The AI assistant will respond to every message!</p>
         </div>
       ) : (
         messages.map((message, index) => (

@@ -95,51 +95,48 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Add user message to history
                 manager.add_to_history(user_message)
 
-                # Check if message mentions the AI (contains @ai or @bot)
-                content = message_data.get("content", "").lower()
-                if "@ai" in content or "@bot" in content:
-                    # Send typing indicator
-                    await manager.broadcast(
-                        {
-                            "type": "typing",
-                            "sender": "assistant",
-                            "is_typing": True,
-                        }
-                    )
-
-                    # Generate AI response with streaming
-                    ai_response_content = ""
-                    async for chunk in ai_service.generate_response_stream(
-                        message_data.get("content", ""),
-                        manager.conversation_history[-10:],  # Last 10 messages for context
-                    ):
-                        ai_response_content += chunk
-
-                        # Send streaming chunk to all clients
-                        await manager.broadcast(
-                            {
-                                "type": "ai_stream",
-                                "content": chunk,
-                                "sender": "assistant",
-                            }
-                        )
-
-                    # Send stream end signal
-                    await manager.broadcast(
-                        {
-                            "type": "ai_stream_end",
-                            "sender": "assistant",
-                        }
-                    )
-
-                    # Add complete AI response to history
-                    ai_message = {
-                        "type": "message",
-                        "content": ai_response_content,
+                # Send typing indicator
+                await manager.broadcast(
+                    {
+                        "type": "typing",
                         "sender": "assistant",
-                        "timestamp": None,
+                        "is_typing": True,
                     }
-                    manager.add_to_history(ai_message)
+                )
+
+                # Generate AI response with streaming
+                ai_response_content = ""
+                async for chunk in ai_service.generate_response_stream(
+                    message_data.get("content", ""),
+                    manager.conversation_history[-10:],  # Last 10 messages for context
+                ):
+                    ai_response_content += chunk
+
+                    # Send streaming chunk to all clients
+                    await manager.broadcast(
+                        {
+                            "type": "ai_stream",
+                            "content": chunk,
+                            "sender": "assistant",
+                        }
+                    )
+
+                # Send stream end signal
+                await manager.broadcast(
+                    {
+                        "type": "ai_stream_end",
+                        "sender": "assistant",
+                    }
+                )
+
+                # Add complete AI response to history
+                ai_message = {
+                    "type": "message",
+                    "content": ai_response_content,
+                    "sender": "assistant",
+                    "timestamp": None,
+                }
+                manager.add_to_history(ai_message)
 
             except json.JSONDecodeError:
                 logger.error("Invalid JSON received")

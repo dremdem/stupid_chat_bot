@@ -34,7 +34,7 @@ This chat bot is designed for casual, collaborative interactions:
 
 - **Multi-user chat without authentication** - No login required, just jump in and start chatting
 - **Anonymous or named participation** - Users can choose a display name or stay anonymous
-- **AI responds when mentioned/tagged** - The AI will answer when specifically called upon using @mentions or tags
+- **AI responds to every message** - The AI assistant participates in every conversation automatically
 - **Persistent history while users are online** - Chat history is maintained as long as at least one user remains connected
 
 ## Tech Stack
@@ -297,7 +297,7 @@ For the "most fancy" chat experience, we recommend:
   - [x] Provider and model selection via config
 
 - [x] Backend: Chat endpoint with AI
-  - [x] Process user messages and detect @ai/@bot mentions
+  - [x] Process user messages and respond to all messages
   - [x] Stream AI responses via WebSocket
   - [x] Handle API errors gracefully
   - [x] Conversation history management
