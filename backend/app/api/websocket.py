@@ -1,8 +1,10 @@
 """WebSocket endpoints for real-time chat functionality."""
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import List
+
 import json
 import logging
+from typing import List
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +26,7 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection."""
         self.active_connections.remove(websocket)
-        logger.info(
-            f"Connection closed. Total connections: {len(self.active_connections)}"
-        )
+        logger.info(f"Connection closed. Total connections: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
         """Broadcast a message to all connected clients."""
@@ -56,12 +56,14 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # Send welcome message only to this client
         await websocket.send_text(
-            json.dumps({
-                "type": "system",
-                "content": "Connected to chat server",
-                "timestamp": None,
-                "system_type": "connection"
-            })
+            json.dumps(
+                {
+                    "type": "system",
+                    "content": "Connected to chat server",
+                    "timestamp": None,
+                    "system_type": "connection",
+                }
+            )
         )
 
         while True:
@@ -76,17 +78,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     "type": "message",
                     "content": message_data.get("content", ""),
                     "sender": message_data.get("sender", "user"),
-                    "timestamp": message_data.get("timestamp")
+                    "timestamp": message_data.get("timestamp"),
                 }
                 await manager.broadcast(user_message)
 
             except json.JSONDecodeError:
                 logger.error("Invalid JSON received")
                 await websocket.send_text(
-                    json.dumps({
-                        "type": "error",
-                        "content": "Invalid message format"
-                    })
+                    json.dumps({"type": "error", "content": "Invalid message format"})
                 )
 
     except WebSocketDisconnect:
