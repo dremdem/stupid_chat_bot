@@ -2,6 +2,32 @@
 
 The most stupid chat bot with AI - a simple, straightforward chat application that connects users with an AI assistant.
 
+## Table of Contents
+- [Use Cases](#use-cases)
+- [Tech Stack](#tech-stack)
+  - [Backend](#backend)
+  - [Frontend](#frontend)
+  - [AI Integration](#ai-integration)
+- [Architecture](#architecture)
+  - [High-Level Overview](#high-level-overview)
+  - [Component Details](#component-details)
+- [Fancy Chat Component](#fancy-chat-component)
+  - [UI Features](#ui-features)
+  - [Recommended Libraries](#recommended-libraries)
+  - [Example Component Structure](#example-component-structure)
+- [Implementation Phases](#implementation-phases)
+  - [Phase 1: Foundation Setup](#phase-1-foundation-setup-week-1)
+  - [Phase 1.5: Code Quality & CI](#phase-15-code-quality--ci-week-15)
+  - [Phase 2: Basic Chat Functionality](#phase-2-basic-chat-functionality-week-2)
+  - [Phase 3: AI Integration](#phase-3-ai-integration-week-3)
+  - [Phase 4: Enhanced UI/UX](#phase-4-enhanced-uiux-week-4)
+  - [Phase 5: Persistence & History](#phase-5-persistence--history-week-5)
+  - [Phase 6: Testing & Deployment](#phase-6-testing--deployment-week-6)
+- [Optional Enhancements](#optional-enhancements-post-mvp)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Use Cases
 
 This chat bot is designed for casual, collaborative interactions:
@@ -178,6 +204,40 @@ For the "most fancy" chat experience, we recommend:
 - Running backend on `http://localhost:8000`
 - Running frontend on `http://localhost:5173`
 - Docker containers for both services
+
+---
+
+### Phase 1.5: Code Quality & CI (Week 1.5)
+**Goal**: Establish code quality standards and automated checks
+
+- [ ] Set up pre-commit hooks
+  - Black formatting for Python
+  - Ruff linting for Python
+  - ESLint for JavaScript/JSX
+  - Prettier for frontend formatting
+  - Gitleaks for secret detection
+  - General quality checks (trailing whitespace, file sizes, etc.)
+
+- [ ] Create GitHub Actions workflow for CI
+  - Backend quality checks (Black, Ruff)
+  - Frontend quality checks (ESLint, Prettier)
+  - Security scanning (Gitleaks, Trivy)
+  - Run on push to master/main and on pull requests
+
+- [ ] Add development dependencies
+  - `requirements-dev.txt` for Python tooling
+  - Update package.json with Prettier
+
+- [ ] Documentation updates
+  - Document pre-commit setup in CLAUDE.md
+  - Add CI badge to README (optional)
+  - Update development workflow instructions
+
+**Deliverables**:
+- Pre-commit hooks preventing bad code from being committed
+- CI pipeline blocking PRs with code quality issues
+- Automated security scanning for secrets and vulnerabilities
+- Clean, consistent codebase following project standards
 
 ---
 

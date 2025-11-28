@@ -71,9 +71,33 @@ cd frontend
 # Lint with ESLint
 npm run lint
 
-# Format with Prettier (add to package.json if needed)
+# Format with Prettier
 npx prettier --write .
 ```
+
+### Pre-commit Hooks
+
+Pre-commit hooks are configured to automatically check code quality before commits.
+
+#### Setup
+```bash
+# Install pre-commit (if not already installed)
+pip install pre-commit
+
+# Install the git hook scripts
+pre-commit install
+
+# (Optional) Run against all files
+pre-commit run --all-files
+```
+
+#### What's Checked
+- **Backend**: Black formatting, Ruff linting
+- **Frontend**: ESLint, Prettier formatting
+- **Security**: Gitleaks secret detection, private key detection
+- **General**: Trailing whitespace, file sizes, YAML validation, merge conflicts
+
+The pre-commit hooks will automatically run when you commit. If any check fails, the commit will be blocked until you fix the issues.
 
 ## Architecture
 
@@ -94,7 +118,7 @@ See [README.md](./README.md) for detailed architecture diagrams and component de
 
 ## Implementation Status
 
-The project is currently in **Phase 1** (Foundation Setup - Completed). See README.md for the complete 6-phase implementation roadmap.
+The project is currently in **Phase 1.5** (Code Quality & CI - In Progress). See README.md for the complete 7-phase implementation roadmap.
 
 ### Completed Phases
 - **Phase 0**: Documentation Phase ✓
@@ -103,6 +127,13 @@ The project is currently in **Phase 1** (Foundation Setup - Completed). See READ
   - Frontend structure with React + Vite
   - Docker setup
   - Linting and formatting configuration
+
+### Current Phase
+- **Phase 1.5**: Code Quality & CI (In Progress)
+  - Pre-commit hooks for code quality
+  - GitHub Actions CI workflow
+  - Security scanning (Gitleaks, Trivy)
+  - Development dependencies
 
 ### Next Phase
 - **Phase 2**: Basic Chat Functionality - WebSocket implementation and simple chat UI
