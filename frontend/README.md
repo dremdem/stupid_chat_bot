@@ -23,11 +23,13 @@ frontend/
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Run the development server:
+
 ```bash
 npm run dev
 ```
@@ -53,11 +55,13 @@ More features will be added in Phase 2 (Chat UI) and Phase 3 (AI integration).
 ## Development
 
 ### Linting
+
 ```bash
 npm run lint
 ```
 
 ### Formatting (with Prettier)
+
 ```bash
 npx prettier --write .
 ```

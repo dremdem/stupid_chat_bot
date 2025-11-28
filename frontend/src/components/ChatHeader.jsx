@@ -1,4 +1,5 @@
-import './ChatHeader.css';
+import PropTypes from 'prop-types'
+import './ChatHeader.css'
 
 /**
  * ChatHeader component - displays the chat title and connection status
@@ -7,31 +8,31 @@ function ChatHeader({ status }) {
   const getStatusColor = () => {
     switch (status) {
       case 'connected':
-        return 'green';
+        return 'green'
       case 'disconnected':
       case 'failed':
-        return 'red';
+        return 'red'
       case 'error':
-        return 'orange';
+        return 'orange'
       default:
-        return 'gray';
+        return 'gray'
     }
-  };
+  }
 
   const getStatusText = () => {
     switch (status) {
       case 'connected':
-        return 'Connected';
+        return 'Connected'
       case 'disconnected':
-        return 'Disconnected';
+        return 'Disconnected'
       case 'failed':
-        return 'Connection Failed';
+        return 'Connection Failed'
       case 'error':
-        return 'Connection Error';
+        return 'Connection Error'
       default:
-        return 'Connecting...';
+        return 'Connecting...'
     }
-  };
+  }
 
   return (
     <div className="chat-header">
@@ -44,7 +45,11 @@ function ChatHeader({ status }) {
         <span className="status-text">{getStatusText()}</span>
       </div>
     </div>
-  );
+  )
 }
 
-export default ChatHeader;
+ChatHeader.propTypes = {
+  status: PropTypes.string.isRequired,
+}
+
+export default ChatHeader

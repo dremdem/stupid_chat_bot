@@ -1,17 +1,18 @@
-import { useEffect, useRef } from 'react';
-import MessageBubble from './MessageBubble';
-import './MessageList.css';
+import { useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
+import MessageBubble from './MessageBubble'
+import './MessageList.css'
 
 /**
  * MessageList component - displays the list of chat messages
  */
 function MessageList({ messages }) {
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   return (
     <div className="message-list">
@@ -26,7 +27,19 @@ function MessageList({ messages }) {
       )}
       <div ref={messagesEndRef} />
     </div>
-  );
+  )
 }
 
-export default MessageList;
+MessageList.propTypes = {
+  messages: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      content: PropTypes.string.isRequired,
+      sender: PropTypes.string,
+      timestamp: PropTypes.string,
+      type: PropTypes.string,
+    })
+  ).isRequired,
+}
+
+export default MessageList
