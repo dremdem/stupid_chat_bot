@@ -1,5 +1,9 @@
 import PropTypes from 'prop-types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import './MessageBubble.css'
+import 'highlight.js/styles/github-dark.css'
 
 /**
  * MessageBubble component - displays a single chat message
@@ -17,13 +21,22 @@ function MessageBubble({ message }) {
   }
 
   // Regular chat messages
-  const isBot = sender === 'bot'
-  const bubbleClass = `message-bubble ${isBot ? 'bot' : 'user'}`
+  const isAssistant = sender === 'assistant'
+  const isUser = sender === 'user'
+  const bubbleClass = `message-bubble ${isAssistant ? 'assistant' : 'user'}`
 
   return (
     <div className={bubbleClass}>
-      <div className="message-sender">{isBot ? 'Bot' : 'You'}</div>
-      <div className="message-content">{content}</div>
+      <div className="message-sender">{isAssistant ? 'AI Assistant' : 'You'}</div>
+      <div className="message-content">
+        {isAssistant ? (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+            {content}
+          </ReactMarkdown>
+        ) : (
+          content
+        )}
+      </div>
       {timestamp && (
         <div className="message-timestamp">{new Date(timestamp).toLocaleTimeString()}</div>
       )}
