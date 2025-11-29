@@ -479,66 +479,79 @@ async def websocket_endpoint_with_session(
     # Full implementation
 ```
 
-## Open Questions & Decisions Needed
+## Decisions Made (Based on Review Feedback)
 
-### 1. Session Title Generation
+### 1. Session Title Generation ✅
 
-**Question:** How to generate session titles?
+**Decision:** Auto-generate from first user message (first 50 chars)
 
-**Options:**
-- a) Auto-generate from first user message (first 50 chars)
-- b) Use timestamp: "Chat 2024-01-15 14:30"
-- c) Let user set custom title
+**Rationale:** Simple, user-friendly, can be enhanced later if needed.
 
-**Recommendation:** Start with (a), add (c) later via API endpoint.
+### 2. Message Streaming & Persistence ✅
 
-### 2. Message Streaming & Persistence
+**Decision:** Save after complete response (current approach)
 
-**Question:** When to save AI streaming responses?
+**Rationale:** Simpler, sufficient for most cases. Streaming is for display only.
 
-**Options:**
-- a) Save after complete response (current approach)
-- b) Save each chunk (real-time persistence)
-- c) Save periodically during streaming (e.g., every 10 chunks)
+### 3. Session Cleanup ✅
 
-**Recommendation:** Start with (a) - simpler, sufficient for most cases.
+**Decision:** Keep everything forever (no cleanup in Phase 5)
 
-### 3. Session Cleanup
+**Rationale:** Simplicity first. Can add archival/cleanup in Phase 6 if needed.
 
-**Question:** Should we delete old/inactive sessions?
+### 4. Session Management Strategy ✅
 
-**Options:**
-- a) Keep everything forever
-- b) Delete sessions after N days of inactivity
-- c) Archive old sessions to separate table
+**DECISION: SINGLE SESSION FOR ALL USERS**
 
-**Recommendation:** Start with (a), add cleanup in Phase 6 if needed.
+**Rationale:** "Let's be supersimple at first"
 
-### 4. Multiple Concurrent Sessions
+**What this means:**
+- ✅ ONE global session for the entire chat bot
+- ✅ All users share the same conversation history
+- ✅ No session CRUD APIs needed
+- ✅ No session management UI needed
+- ✅ Focus entirely on message persistence
 
-**Question:** Can a user be in multiple sessions simultaneously?
-
-**Current behavior:** ConnectionManager is global, all users share history.
-
-**Phase 5 behavior:** Each WebSocket connection is to a specific session.
-
-**Implication:** Need to track which connections belong to which session.
-
+**Implementation:**
 ```python
-class ConnectionManager:
-    def __init__(self):
-        # Map session_id -> list of connected websockets
-        self.connections: Dict[uuid.UUID, List[WebSocket]] = {}
+# On app startup, create or load the default session
+async def get_or_create_default_session(db: AsyncSession) -> ChatSession:
+    """Get the default global session, creating it if it doesn't exist."""
+    session_repo = SessionRepository(db)
 
-    async def broadcast_to_session(
-        self,
-        session_id: uuid.UUID,
-        message: dict
-    ):
-        """Broadcast only to connections in this session."""
-        for ws in self.connections.get(session_id, []):
-            await ws.send_json(message)
+    # Try to get existing default session
+    session = await session_repo.get_by_title("Default Chat Session")
+
+    if not session:
+        # Create default session
+        session = await session_repo.create(
+            title="Default Chat Session",
+            metadata={"is_default": True}
+        )
+
+    return session
+
+# WebSocket stays simple - no session_id needed
+@router.websocket("/ws/chat")
+async def websocket_endpoint(websocket: WebSocket):
+    async with async_session_maker() as db:
+        session = await get_or_create_default_session(db)
+
+    # Use session.id for all message operations
+    # But users don't know or care about sessions
 ```
+
+**Benefits:**
+- ✅ Maintains current user experience (no changes for users)
+- ✅ No frontend changes needed for session management
+- ✅ Still gets message persistence
+- ✅ Can easily evolve to multi-session in Phase 6 if needed
+
+**What we're NOT doing in Phase 5:**
+- ❌ Multiple sessions per user
+- ❌ Session creation/deletion APIs
+- ❌ Session list UI
+- ❌ Session switching
 
 ## Risks & Mitigations
 
