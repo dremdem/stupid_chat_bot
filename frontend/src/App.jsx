@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
 import ChatHeader from './components/ChatHeader'
 import MessageList from './components/MessageList'
 import InputBox from './components/InputBox'
@@ -75,6 +76,15 @@ function App() {
     // Handle connection status changes and get cleanup function
     const cleanupConnectionHandler = websocketService.onConnectionChange(status => {
       setConnectionStatus(status)
+
+      // Show toast notifications for connection status
+      if (status === 'connected') {
+        toast.success('Connected to chat server')
+      } else if (status === 'disconnected' || status === 'failed') {
+        toast.error('Disconnected from chat server')
+      } else if (status === 'error') {
+        toast.error('Connection error - please try refreshing the page')
+      }
     })
 
     // Cleanup on unmount

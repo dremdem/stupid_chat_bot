@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -14,9 +15,14 @@ function MessageBubble({ message }) {
   // System messages (like connection status)
   if (type === 'system') {
     return (
-      <div className="message-bubble system">
+      <motion.div
+        className="message-bubble system"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="message-content">{content}</div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -25,7 +31,12 @@ function MessageBubble({ message }) {
   const bubbleClass = `message-bubble ${isAssistant ? 'assistant' : 'user'}`
 
   return (
-    <div className={bubbleClass}>
+    <motion.div
+      className={bubbleClass}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
       <div className="message-sender">{isAssistant ? 'AI Assistant' : 'You'}</div>
       <div className="message-content">
         {isAssistant ? (
@@ -39,7 +50,7 @@ function MessageBubble({ message }) {
       {timestamp && (
         <div className="message-timestamp">{new Date(timestamp).toLocaleTimeString()}</div>
       )}
-    </div>
+    </motion.div>
   )
 }
 

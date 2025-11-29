@@ -4,8 +4,10 @@
   height: 100vh;
   max-width: 1200px;
   margin: 0 auto;
-  background: white;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  background: var(--app-bg);
+  box-shadow: 0 0 20px var(--shadow-color);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 768px) {

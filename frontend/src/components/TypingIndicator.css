@@ -5,10 +5,13 @@
 }
 
 .typing-bubble {
-  background-color: #e8eaed;
+  background: var(--message-assistant-bg);
   border-radius: 18px;
   padding: 12px 16px;
   display: inline-block;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
 }
 
 .typing-dots {
@@ -21,7 +24,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #999;
+  background-color: var(--button-bg);
   animation: typing-bounce 1.4s infinite ease-in-out;
 }
 
