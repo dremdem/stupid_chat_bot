@@ -12,6 +12,7 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState('connecting')
   const [isTyping, setIsTyping] = useState(false)
   const streamingMessageRef = useRef(null)
+  const hasConnectedOnce = useRef(false)
 
   useEffect(() => {
     // Connect to WebSocket
@@ -77,13 +78,21 @@ function App() {
     const cleanupConnectionHandler = websocketService.onConnectionChange(status => {
       setConnectionStatus(status)
 
-      // Show toast notifications for connection status
+      // Only show toast notifications after the initial connection
+      // This prevents spam on page load/refresh
       if (status === 'connected') {
-        toast.success('Connected to chat server')
-      } else if (status === 'disconnected' || status === 'failed') {
+        if (hasConnectedOnce.current) {
+          // Reconnection after disconnect
+          toast.success('Reconnected to chat server')
+        }
+        hasConnectedOnce.current = true
+      } else if (status === 'disconnected' && hasConnectedOnce.current) {
+        // Only show disconnect if we had connected before
         toast.error('Disconnected from chat server')
-      } else if (status === 'error') {
-        toast.error('Connection error - please try refreshing the page')
+      } else if (status === 'failed') {
+        toast.error('Connection failed - please refresh the page')
+      } else if (status === 'error' && hasConnectedOnce.current) {
+        toast.error('Connection error - attempting to reconnect...')
       }
     })
 
