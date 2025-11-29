@@ -1,10 +1,13 @@
 import PropTypes from 'prop-types'
+import { useTheme } from '../contexts/ThemeContext'
 import './ChatHeader.css'
 
 /**
  * ChatHeader component - displays the chat title and connection status
  */
 function ChatHeader({ status }) {
+  const { theme, toggleTheme } = useTheme()
+
   const getStatusColor = () => {
     switch (status) {
       case 'connected':
@@ -40,9 +43,14 @@ function ChatHeader({ status }) {
         <h1>Stupid Chat Bot</h1>
         <p className="chat-subtitle">A simple, straightforward chat</p>
       </div>
-      <div className="connection-status">
-        <span className={`status-indicator ${getStatusColor()}`}></span>
-        <span className="status-text">{getStatusText()}</span>
+      <div className="header-controls">
+        <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+        <div className="connection-status">
+          <span className={`status-indicator ${getStatusColor()}`}></span>
+          <span className="status-text">{getStatusText()}</span>
+        </div>
       </div>
     </div>
   )

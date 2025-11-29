@@ -4,14 +4,53 @@
   box-sizing: border-box;
 }
 
+:root[data-theme='light'] {
+  --bg-gradient-start: #667eea;
+  --bg-gradient-end: #764ba2;
+  --app-bg: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --message-user-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --message-user-text: #ffffff;
+  --message-assistant-bg: rgba(243, 244, 246, 0.9);
+  --message-assistant-text: #1f2937;
+  --input-bg: #ffffff;
+  --input-border: #e5e7eb;
+  --button-bg: #667eea;
+  --button-text: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --code-bg: #1f2937;
+}
+
+:root[data-theme='dark'] {
+  --bg-gradient-start: #1a1a2e;
+  --bg-gradient-end: #16213e;
+  --app-bg: #0f1419;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --message-user-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --message-user-text: #ffffff;
+  --message-assistant-bg: rgba(31, 41, 55, 0.9);
+  --message-assistant-text: #e5e7eb;
+  --input-bg: #1f2937;
+  --input-border: #374151;
+  --button-bg: #667eea;
+  --button-text: #ffffff;
+  --header-bg: rgba(15, 20, 25, 0.95);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --code-bg: #0d1117;
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   overflow: hidden;
+  transition: background 0.3s ease;
 }
 
 code {
