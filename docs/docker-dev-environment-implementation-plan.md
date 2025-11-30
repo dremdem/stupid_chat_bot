@@ -74,10 +74,11 @@ The current `docker-compose.yml` already implements most of the proposed feature
 3. Can lead to "works on my machine" issues (the problem we're trying to solve!)
 
 **Recommendation**:
-- Implement dependency hash checking
-- Add make targets or scripts to detect when dependencies changed
-- Consider watch mode for automatic image rebuilding
-- Document the rebuild workflow clearly
+- Use `uv` package manager with lock files (`uv.lock`)
+- Build Docker images from lock files for reproducibility
+- Include lock file commits in version control and release process
+- Auto-rebuild images when lock files change (CI/CD automation)
+- Document the workflow: `uv add package` → commit `uv.lock` → teammates rebuild images
 
 ### 3. Image Bloat and Build Time
 
@@ -89,30 +90,32 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Storage costs increase
 
 **Recommendation**:
-- Implement multi-stage builds with separate dev and prod targets
+- **Defer multi-stage builds** to later implementation phases (Phase 4+)
+- Focus first on functional dev environment with simple Dockerfiles
 - Use `.dockerignore` to exclude unnecessary files
 - Leverage Docker layer caching effectively
-- Consider using a private registry with image caching
+- Consider using a private registry with image caching when optimization becomes necessary
 
 ### 4. Database and External Services
 
-**Problem**: The plan doesn't address how developers will run databases, Redis, or other services.
+**Problem**: The plan doesn't address how developers will run databases and other services.
 
-**Missing**:
-- PostgreSQL for chat history (Phase 5)
-- Potential Redis for caching
-- Service orchestration and networking
+**Current Plan**:
+- **SQLite** for chat history (Phase 5) - file-based, no separate service needed
+- File will be volume-mounted for persistence
+- Potential Redis for caching (future consideration)
 
 **Recommendation**:
-- Extend docker-compose.yml with additional services
-- Use Docker networks for service discovery
-- Provide seed data and migration scripts
-- Consider using docker-compose profiles for optional services
+- Use SQLite initially (zero-config, perfect for development)
+- Mount database file via volume: `./backend/data:/app/data`
+- Include Alembic migrations for schema management
+- Database service setup can be deferred until PostgreSQL migration is needed
+- Consider using docker-compose profiles for optional services when needed
 
 ### 5. Development Workflow Complexity
 
 **Problem**: Running all commands inside containers adds friction:
-- `docker-compose exec backend pip install package`
+- `docker-compose exec backend uv add package`
 - `docker-compose exec frontend npm install package`
 - Longer commands, more typing, easy to forget
 
@@ -122,10 +125,11 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Possible resistance to adoption
 
 **Recommendation**:
-- Create wrapper scripts (Makefile, shell scripts, or npm scripts)
+- Use `uv` inside dev container for faster Python package management
+- Create wrapper scripts using Python's `invoke` library for Python tasks
+- Create npm scripts or Makefile for frontend/orchestration tasks
 - Provide VS Code devcontainer.json for IDE integration
 - Document common workflows with copy-paste examples
-- Consider Taskfile or Just for modern task running
 
 ### 6. IDE and Debugging Integration
 
@@ -137,10 +141,13 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Port forwarding for debug ports
 
 **Recommendation**:
-- Provide VS Code Remote-Containers configuration
-- Document debugger setup for PyCharm and VS Code
-- Expose debug ports in docker-compose.yml
-- Consider JetBrains Gateway support
+- **Document the issue and requirements** in implementation plan
+- **Postpone actual implementation** to later phases (Phase 5-6)
+- When implemented, provide:
+  - VS Code Remote-Containers configuration
+  - Debugger setup documentation for PyCharm and VS Code
+  - Expose debug ports in docker-compose.yml (e.g., 5678 for Python)
+  - JetBrains Gateway support documentation
 
 ### 7. Pre-commit Hooks Conflict
 
@@ -152,10 +159,12 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Formatting conflicts between environments
 
 **Recommendation**:
-- Run pre-commit hooks inside Docker containers
-- Provide a wrapper script for git hooks
-- Ensure tool versions match between host and container
-- Alternative: Document that pre-commit requires local Python
+- Create a **minimal local virtual environment** managed by `uv` for tools like Black, Ruff
+- This venv is only for pre-commit hooks, not for development
+- Use `uv` to ensure version consistency with Docker environment
+- Defer full containerized pre-commit implementation to later phases
+- Document setup: `uv venv && uv pip install black ruff` for pre-commit tools
+- Alternative long-term: Run pre-commit hooks inside Docker containers via wrapper script
 
 ### 8. Security Concerns
 
@@ -167,10 +176,13 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Exposure of environment variables and secrets
 
 **Recommendation**:
-- Use non-root users in Dockerfiles
-- Match UID/GID between host and container
-- Use .env files with proper .gitignore
-- Implement secrets management (Docker secrets, vault)
+- **Postpone security hardening** to later phases (Phase 6+)
+- Focus first on functional development environment
+- When addressed in future phases:
+  - Use non-root users in Dockerfiles
+  - Match UID/GID between host and container
+  - Use .env files with proper .gitignore
+  - Implement secrets management (Docker secrets, vault)
 
 ---
 
@@ -253,10 +265,11 @@ The current `docker-compose.yml` already implements most of the proposed feature
    ```
 
 2. **Create Helper Scripts**
-   - `scripts/dev.sh` - Start dev environment
-   - `scripts/install-deps.sh` - Install dependencies
-   - `scripts/run-tests.sh` - Run all tests
-   - `scripts/format-code.sh` - Format all code
+   - Use Python's `invoke` library for Python-related tasks
+   - `tasks.py` with invoke tasks for backend operations
+   - Create npm scripts for frontend operations
+   - `scripts/dev.sh` - Start dev environment (shell script)
+   - Document task usage: `invoke test`, `invoke format`, etc.
 
 3. **VS Code Integration**
    - Create `.devcontainer/devcontainer.json`
@@ -280,46 +293,43 @@ The current `docker-compose.yml` already implements most of the proposed feature
 
 ### Phase 3: Database Integration (Week 3)
 
-**Goal**: Prepare for Phase 5 (Persistence & History) with proper DB setup
+**Goal**: Prepare for Phase 5 (Persistence & History) with SQLite setup
 
 #### Tasks:
-1. **Add PostgreSQL to docker-compose**
+1. **Configure SQLite Volume Mounting**
    ```yaml
    services:
-     db:
-       image: postgres:15-alpine
-       environment:
-         POSTGRES_DB: chatbot
-         POSTGRES_USER: chatbot
-         POSTGRES_PASSWORD: chatbot_dev
+     backend:
        volumes:
-         - postgres_data:/var/lib/postgresql/data
-       ports:
-         - "5432:5432"
+         - ./backend:/app
+         - ./backend/data:/app/data  # SQLite database file
    ```
 
 2. **Set up Alembic**
-   - Install Alembic in backend
-   - Initialize Alembic configuration
+   - Install Alembic in backend (with aiosqlite driver)
+   - Initialize Alembic configuration for async SQLAlchemy
    - Create initial migration structure
-   - Add migration helper commands to Makefile
+   - Add migration helper commands to Makefile/invoke tasks
 
 3. **Database Utilities**
-   - Create `scripts/db-reset.sh` - Drop and recreate DB
-   - Create `scripts/db-migrate.sh` - Run migrations
-   - Create `scripts/db-seed.sh` - Seed test data
+   - Create invoke task: `invoke db-migrate` - Run migrations
+   - Create invoke task: `invoke db-reset` - Reset database (delete file + re-migrate)
+   - Create invoke task: `invoke db-seed` - Seed test data
+   - Add database file to .gitignore
 
 4. **Connection Management**
-   - Update backend to use PostgreSQL
-   - Add SQLAlchemy models
-   - Implement connection pooling
+   - Update backend to use SQLite with aiosqlite
+   - Add SQLAlchemy async models
+   - Configure database URL: `sqlite+aiosqlite:///data/chat.db`
    - Add health check for DB connection
 
 **Deliverables**:
-- PostgreSQL service in docker-compose.dev.yml
+- Updated docker-compose.dev.yml with data volume
 - Alembic configuration and initial migration
-- Database management scripts
-- Updated backend with DB integration
+- Invoke tasks for database management
+- Updated backend with SQLite + SQLAlchemy integration
+
+**Note**: PostgreSQL migration can be considered in future phases if needed
 
 ---
 
@@ -638,9 +648,7 @@ db-migrate: ## Run database migrations
 db-reset: ## Reset database (DESTROYS DATA)
 	@echo "This will destroy all data. Press Ctrl+C to cancel, or Enter to continue."
 	@read
-	docker-compose -f docker-compose.dev.yml down -v
-	docker-compose -f docker-compose.dev.yml up -d db
-	@sleep 2
+	docker-compose -f docker-compose.dev.yml exec backend rm -f /app/data/chat.db
 	docker-compose -f docker-compose.dev.yml exec backend alembic upgrade head
 
 clean: ## Clean up containers, volumes, and images
@@ -652,8 +660,6 @@ clean: ## Clean up containers, volumes, and images
 ## Appendix B: Example docker-compose.dev.yml
 
 ```yaml
-version: '3.8'
-
 services:
   backend:
     build:
@@ -668,13 +674,12 @@ services:
       - PORT=8000
       - RELOAD=true
       - CORS_ORIGINS=http://localhost:5173
-      - DATABASE_URL=postgresql://chatbot:chatbot_dev@db:5432/chatbot
+      - DATABASE_PATH=/app/data/chat.db
     volumes:
       - ./backend:/app
+      - ./backend/data:/app/data  # SQLite database file
       - backend_venv:/app/.venv
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - db
     networks:
       - chat-network
 
@@ -693,24 +698,9 @@ services:
     networks:
       - chat-network
 
-  db:
-    image: postgres:15-alpine
-    container_name: stupid-chat-bot-db-dev
-    environment:
-      POSTGRES_DB: chatbot
-      POSTGRES_USER: chatbot
-      POSTGRES_PASSWORD: chatbot_dev
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - chat-network
-
 volumes:
   backend_venv:
   frontend_node_modules:
-  postgres_data:
 
 networks:
   chat-network:
@@ -727,7 +717,6 @@ FROM python:3.12-slim
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -735,7 +724,7 @@ WORKDIR /app
 # Install uv for faster package installation
 RUN pip install uv
 
-# Copy requirements file
+# Copy requirements or uv.lock file
 COPY requirements.txt .
 
 # Install dependencies using uv
