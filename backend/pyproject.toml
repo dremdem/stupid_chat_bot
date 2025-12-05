@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "Backend for Stupid Chat Bot"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi==0.115.5",
-    "uvicorn[standard]==0.32.1",
-    "pydantic==2.10.3",
-    "pydantic-settings==2.6.1",
-    "python-dotenv==1.0.1",
-    "websockets==14.1",
-    "litellm==1.80.5",
+    "fastapi>=0.115.5",
+    "uvicorn[standard]>=0.32.1",
+    "pydantic>=2.10.3",
+    "pydantic-settings>=2.6.1",
+    "python-dotenv>=1.0.1",
+    "websockets>=14.1",
+    "litellm>=1.80.5",
 ]
 
 [project.optional-dependencies]
