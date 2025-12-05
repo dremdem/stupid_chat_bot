@@ -49,7 +49,7 @@ The frontend will be available at `http://localhost:5173`
 
 ### Docker (Recommended for local development)
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This will start both backend and frontend services:
@@ -82,7 +82,7 @@ uv sync --all-extras
 
 **Docker development** (recommended):
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 #### Adding Dependencies
@@ -96,7 +96,7 @@ uv add <package-name>
 uv lock
 
 # Rebuild Docker image
-docker-compose build backend
+docker compose build backend
 ```
 
 **Development dependency**:
@@ -119,7 +119,7 @@ uv lock --upgrade
 uv lock --upgrade-package <package-name>
 
 # Rebuild Docker image
-docker-compose build backend
+docker compose build backend
 ```
 
 #### Verifying Lock File
@@ -275,7 +275,7 @@ The application supports multiple AI providers through LiteLLM. To switch provid
 4. **Restart the backend:**
    ```bash
    # If using Docker
-   docker-compose restart backend
+   docker compose restart backend
 
    # If running locally
    cd backend
