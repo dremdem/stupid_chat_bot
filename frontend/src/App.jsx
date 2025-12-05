@@ -46,13 +46,17 @@ function App() {
           setMessages(prev => [...prev, newMessage])
         } else {
           // Append to existing streaming message
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageRef.current.id
-                ? { ...msg, content: msg.content + message.content }
-                : msg
+          // Capture the current ref value to avoid race conditions
+          const currentStreamingMessage = streamingMessageRef.current
+          if (currentStreamingMessage) {
+            setMessages(prev =>
+              prev.filter(msg => msg != null).map(msg =>
+                msg.id === currentStreamingMessage.id
+                  ? { ...msg, content: msg.content + message.content }
+                  : msg
+              )
             )
-          )
+          }
         }
         return
       }
@@ -65,13 +69,15 @@ function App() {
       }
 
       // Handle regular messages
-      setMessages(prev => [
-        ...prev,
-        {
-          ...message,
-          id: Date.now() + Math.random(), // Simple unique ID
-        },
-      ])
+      if (message && message.content) {
+        setMessages(prev => [
+          ...prev,
+          {
+            ...message,
+            id: Date.now() + Math.random(), // Simple unique ID
+          },
+        ])
+      }
     })
 
     // Handle connection status changes and get cleanup function
