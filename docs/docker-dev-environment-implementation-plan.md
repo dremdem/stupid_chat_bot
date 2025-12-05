@@ -4,7 +4,7 @@
 
 This document provides a critical analysis of the proposed Docker-based development workflow and presents a comprehensive implementation plan for migrating the "Stupid Chat Bot" project to a fully containerized development environment.
 
-**Current Status**: The project already uses Docker with volumes for development (docker-compose.yml), but dependencies are installed inside images during build time, and the current setup is close to the proposed "Dev Image" approach.
+**Current Status**: The project already uses Docker with volumes for development (docker compose.yml), but dependencies are installed inside images during build time, and the current setup is close to the proposed "Dev Image" approach.
 
 **Key Finding**: The proposed plan is largely **already implemented** in the current setup. This document focuses on identifying gaps, weaknesses, and recommending improvements.
 
@@ -14,7 +14,7 @@ This document provides a critical analysis of the proposed Docker-based developm
 
 ### What's Already Working
 
-The current `docker-compose.yml` already implements most of the proposed features:
+The current `docker compose.yml` already implements most of the proposed features:
 
 1. ✅ **Source Code Mounting**: Both backend and frontend mount code via volumes
    ```yaml
@@ -36,7 +36,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 ### Gaps in Current Implementation
 
 1. ❌ **No Explicit Dev vs. Prod Images**: Current Dockerfiles mix concerns
-2. ❌ **No Helper Scripts**: Developers must use `docker-compose exec` manually
+2. ❌ **No Helper Scripts**: Developers must use `docker compose exec` manually
 3. ❌ **Missing Development Tools**: No linters/formatters inside containers
 4. ❌ **No Alembic/Migrations Setup**: Database migrations mentioned but not implemented
 5. ❌ **Node Modules Volume**: Frontend uses anonymous volume for `node_modules`, which can cause issues
@@ -104,16 +104,16 @@ The current `docker-compose.yml` already implements most of the proposed feature
 - Service orchestration and networking
 
 **Recommendation**:
-- Extend docker-compose.yml with additional services
+- Extend docker compose.yml with additional services
 - Use Docker networks for service discovery
 - Provide seed data and migration scripts
-- Consider using docker-compose profiles for optional services
+- Consider using docker compose profiles for optional services
 
 ### 5. Development Workflow Complexity
 
 **Problem**: Running all commands inside containers adds friction:
-- `docker-compose exec backend pip install package`
-- `docker-compose exec frontend npm install package`
+- `docker compose exec backend pip install package`
+- `docker compose exec frontend npm install package`
 - Longer commands, more typing, easy to forget
 
 **Impact**:
@@ -139,7 +139,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 **Recommendation**:
 - Provide VS Code Remote-Containers configuration
 - Document debugger setup for PyCharm and VS Code
-- Expose debug ports in docker-compose.yml
+- Expose debug ports in docker compose.yml
 - Consider JetBrains Gateway support
 
 ### 7. Pre-commit Hooks Conflict
@@ -194,9 +194,9 @@ The current `docker-compose.yml` already implements most of the proposed feature
    - Install global tools (npm-check-updates)
    - Use non-root user
 
-3. **Update docker-compose.yml**
-   - Create `docker-compose.dev.yml` for development
-   - Keep `docker-compose.yml` minimal for production
+3. **Update docker compose.yml**
+   - Create `docker compose.dev.yml` for development
+   - Keep `docker compose.yml` minimal for production
    - Add named volumes for dependencies:
      ```yaml
      volumes:
@@ -214,7 +214,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 **Deliverables**:
 - `backend/Dockerfile.dev`
 - `frontend/Dockerfile.dev`
-- `docker-compose.dev.yml`
+- `docker compose.dev.yml`
 - Updated documentation in CLAUDE.md
 
 ---
@@ -229,27 +229,27 @@ The current `docker-compose.yml` already implements most of the proposed feature
    .PHONY: dev-up dev-down backend-shell frontend-shell
 
    dev-up:
-       docker-compose -f docker-compose.dev.yml up -d
+       docker compose -f docker compose.dev.yml up -d
 
    dev-down:
-       docker-compose -f docker-compose.dev.yml down
+       docker compose -f docker compose.dev.yml down
 
    backend-shell:
-       docker-compose -f docker-compose.dev.yml exec backend bash
+       docker compose -f docker compose.dev.yml exec backend bash
 
    backend-install:
-       docker-compose -f docker-compose.dev.yml exec backend pip install $(PKG)
-       docker-compose -f docker-compose.dev.yml exec backend pip freeze > backend/requirements.txt
+       docker compose -f docker compose.dev.yml exec backend pip install $(PKG)
+       docker compose -f docker compose.dev.yml exec backend pip freeze > backend/requirements.txt
 
    frontend-install:
-       docker-compose -f docker-compose.dev.yml exec frontend npm install $(PKG)
+       docker compose -f docker compose.dev.yml exec frontend npm install $(PKG)
 
    test-backend:
-       docker-compose -f docker-compose.dev.yml exec backend pytest
+       docker compose -f docker compose.dev.yml exec backend pytest
 
    lint-backend:
-       docker-compose -f docker-compose.dev.yml exec backend black .
-       docker-compose -f docker-compose.dev.yml exec backend ruff check .
+       docker compose -f docker compose.dev.yml exec backend black .
+       docker compose -f docker compose.dev.yml exec backend ruff check .
    ```
 
 2. **Create Helper Scripts**
@@ -283,7 +283,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 **Goal**: Prepare for Phase 5 (Persistence & History) with proper DB setup
 
 #### Tasks:
-1. **Add PostgreSQL to docker-compose**
+1. **Add PostgreSQL to docker compose**
    ```yaml
    services:
      db:
@@ -316,7 +316,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
    - Add health check for DB connection
 
 **Deliverables**:
-- PostgreSQL service in docker-compose.dev.yml
+- PostgreSQL service in docker compose.dev.yml
 - Alembic configuration and initial migration
 - Database management scripts
 - Updated backend with DB integration
@@ -341,7 +341,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
    - Security scanning with Trivy
 
 3. **Testing Strategy**
-   - Integration tests with docker-compose
+   - Integration tests with docker compose
    - E2E tests against containerized app
    - Performance benchmarks
 
@@ -377,7 +377,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 
 3. **Optimization**
    - Keep containers running to avoid startup overhead
-   - Use docker-compose exec for speed
+   - Use docker compose exec for speed
    - Cache pre-commit environments
 
 **Deliverables**:
@@ -430,7 +430,7 @@ The current `docker-compose.yml` already implements most of the proposed feature
 **Approach**: Allow developers to choose between local and Docker development
 
 **Steps**:
-1. Introduce docker-compose.dev.yml alongside existing setup
+1. Introduce docker compose.dev.yml alongside existing setup
 2. Document both approaches in parallel
 3. Provide migration guide
 4. Set sunset date for local development support (e.g., 2 months)
@@ -583,73 +583,73 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 dev-up: ## Start development environment
-	docker-compose -f docker-compose.dev.yml up -d
+	docker compose -f docker compose.dev.yml up -d
 	@echo "Development environment started!"
 	@echo "Backend: http://localhost:8000"
 	@echo "Frontend: http://localhost:5173"
 
 dev-down: ## Stop development environment
-	docker-compose -f docker-compose.dev.yml down
+	docker compose -f docker compose.dev.yml down
 
 dev-restart: dev-down dev-up ## Restart development environment
 
 dev-logs: ## Show logs from all services
-	docker-compose -f docker-compose.dev.yml logs -f
+	docker compose -f docker compose.dev.yml logs -f
 
 backend-shell: ## Open shell in backend container
-	docker-compose -f docker-compose.dev.yml exec backend bash
+	docker compose -f docker compose.dev.yml exec backend bash
 
 frontend-shell: ## Open shell in frontend container
-	docker-compose -f docker-compose.dev.yml exec frontend sh
+	docker compose -f docker compose.dev.yml exec frontend sh
 
 backend-install: ## Install Python package (usage: make backend-install PKG=package-name)
 	@if [ -z "$(PKG)" ]; then echo "Usage: make backend-install PKG=package-name"; exit 1; fi
-	docker-compose -f docker-compose.dev.yml exec backend pip install $(PKG)
-	docker-compose -f docker-compose.dev.yml exec backend pip freeze > backend/requirements.txt
+	docker compose -f docker compose.dev.yml exec backend pip install $(PKG)
+	docker compose -f docker compose.dev.yml exec backend pip freeze > backend/requirements.txt
 	@echo "Package $(PKG) installed. Rebuild image to persist: make dev-rebuild"
 
 frontend-install: ## Install NPM package (usage: make frontend-install PKG=package-name)
 	@if [ -z "$(PKG)" ]; then echo "Usage: make frontend-install PKG=package-name"; exit 1; fi
-	docker-compose -f docker-compose.dev.yml exec frontend npm install $(PKG)
+	docker compose -f docker compose.dev.yml exec frontend npm install $(PKG)
 	@echo "Package $(PKG) installed and saved to package.json"
 
 dev-rebuild: ## Rebuild development images
-	docker-compose -f docker-compose.dev.yml build --no-cache
+	docker compose -f docker compose.dev.yml build --no-cache
 
 test-backend: ## Run backend tests
-	docker-compose -f docker-compose.dev.yml exec backend pytest
+	docker compose -f docker compose.dev.yml exec backend pytest
 
 test-frontend: ## Run frontend tests
-	docker-compose -f docker-compose.dev.yml exec frontend npm test
+	docker compose -f docker compose.dev.yml exec frontend npm test
 
 lint-backend: ## Lint and format backend code
-	docker-compose -f docker-compose.dev.yml exec backend black .
-	docker-compose -f docker-compose.dev.yml exec backend ruff check .
+	docker compose -f docker compose.dev.yml exec backend black .
+	docker compose -f docker compose.dev.yml exec backend ruff check .
 
 lint-frontend: ## Lint and format frontend code
-	docker-compose -f docker-compose.dev.yml exec frontend npm run lint
-	docker-compose -f docker-compose.dev.yml exec frontend npx prettier --write .
+	docker compose -f docker compose.dev.yml exec frontend npm run lint
+	docker compose -f docker compose.dev.yml exec frontend npx prettier --write .
 
 lint: lint-backend lint-frontend ## Lint all code
 
 db-migrate: ## Run database migrations
-	docker-compose -f docker-compose.dev.yml exec backend alembic upgrade head
+	docker compose -f docker compose.dev.yml exec backend alembic upgrade head
 
 db-reset: ## Reset database (DESTROYS DATA)
 	@echo "This will destroy all data. Press Ctrl+C to cancel, or Enter to continue."
 	@read
-	docker-compose -f docker-compose.dev.yml down -v
-	docker-compose -f docker-compose.dev.yml up -d db
+	docker compose -f docker compose.dev.yml down -v
+	docker compose -f docker compose.dev.yml up -d db
 	@sleep 2
-	docker-compose -f docker-compose.dev.yml exec backend alembic upgrade head
+	docker compose -f docker compose.dev.yml exec backend alembic upgrade head
 
 clean: ## Clean up containers, volumes, and images
-	docker-compose -f docker-compose.dev.yml down -v --rmi local
+	docker compose -f docker compose.dev.yml down -v --rmi local
 ```
 
 ---
 
-## Appendix B: Example docker-compose.dev.yml
+## Appendix B: Example docker compose.dev.yml
 
 ```yaml
 version: '3.8'
@@ -760,7 +760,7 @@ USER developer
 # Expose ports
 EXPOSE 8000 5678
 
-# Command will be overridden by docker-compose
+# Command will be overridden by docker compose
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 

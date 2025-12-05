@@ -327,16 +327,16 @@ uv export --format requirements.txt --no-hashes > requirements.txt
 uv export --format requirements.txt > requirements-locked.txt
 
 # Rebuild Docker image
-docker-compose build backend
+docker compose build backend
 ```
 
 **Option 2: Using Docker (Quick Testing)**
 ```bash
 # Install in running container
-docker-compose exec backend uv add <package-name>
+docker compose exec backend uv add <package-name>
 
 # Or with pip (temporary, not persisted in image)
-docker-compose exec backend pip install <package-name>
+docker compose exec backend pip install <package-name>
 
 # Don't forget to update lock file on host!
 cd backend
@@ -358,7 +358,7 @@ uv export --format requirements.txt --no-hashes > requirements.txt
 uv export --format requirements.txt > requirements-locked.txt
 
 # Rebuild
-docker-compose build backend
+docker compose build backend
 ```
 
 #### Syncing Environment
@@ -499,7 +499,7 @@ USER developer
 # Expose ports
 EXPOSE 8000 5678
 
-# Command will be overridden by docker-compose
+# Command will be overridden by docker compose
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
@@ -590,13 +590,13 @@ diff requirements.txt requirements-test.txt
 #### Step 6: Integration Test
 ```bash
 # Start services
-docker-compose up -d
+docker compose up -d
 
 # Test API
 curl http://localhost:8000/health
 
 # Check logs for any dependency errors
-docker-compose logs backend | grep -i error
+docker compose logs backend | grep -i error
 ```
 
 ### Post-Migration Verification
@@ -624,8 +624,8 @@ git checkout HEAD -- backend/requirements.txt
 git checkout HEAD -- backend/Dockerfile
 
 # Rebuild
-docker-compose build backend
-docker-compose up -d
+docker compose build backend
+docker compose up -d
 ```
 
 ### Partial Rollback (Keep Lock File, Use requirements-locked.txt)
@@ -634,7 +634,7 @@ docker-compose up -d
 # Edit backend/Dockerfile to use Option 2 (fallback)
 
 # Rebuild
-docker-compose build backend
+docker compose build backend
 ```
 
 ---

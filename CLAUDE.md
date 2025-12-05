@@ -28,7 +28,7 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
 ### Backend
 ```bash
 cd backend
-uv pip install -r requirements.txt
+uv sync
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -49,12 +49,88 @@ The frontend will be available at `http://localhost:5173`
 
 ### Docker (Recommended for local development)
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This will start both backend and frontend services:
 - Backend: `http://localhost:8000`
 - Frontend: `http://localhost:5173`
+
+## Dependency Management
+
+### Backend Dependencies
+
+The backend uses `uv` with `pyproject.toml` + `uv.lock` for reproducible dependency management.
+
+#### File Structure
+- `pyproject.toml` - Project metadata and dependency specifications
+- `uv.lock` - Lock file with exact versions and SHA256 hashes (DO NOT edit manually)
+- `requirements.txt` - Legacy file (kept for reference, may be removed)
+- `requirements-dev.txt` - Legacy file (kept for reference, may be removed)
+
+#### Installing Dependencies
+
+**Local development**:
+```bash
+cd backend
+# Install production dependencies
+uv sync
+
+# Install with dev dependencies
+uv sync --all-extras
+```
+
+**Docker development** (recommended):
+```bash
+docker compose up --build
+```
+
+#### Adding Dependencies
+
+**Production dependency**:
+```bash
+cd backend
+uv add <package-name>
+
+# Or manually edit pyproject.toml [project.dependencies], then:
+uv lock
+
+# Rebuild Docker image
+docker compose build backend
+```
+
+**Development dependency**:
+```bash
+cd backend
+uv add --dev <package-name>
+
+# Or manually edit pyproject.toml [project.optional-dependencies.dev], then:
+uv lock
+```
+
+#### Updating Dependencies
+
+```bash
+cd backend
+# Update all dependencies
+uv lock --upgrade
+
+# Update specific package
+uv lock --upgrade-package <package-name>
+
+# Rebuild Docker image
+docker compose build backend
+```
+
+#### Verifying Lock File
+
+```bash
+cd backend
+# Check if lock file is up to date with pyproject.toml
+uv lock --check
+```
+
+This command is useful in CI/CD to ensure the lock file hasn't drifted from the project configuration.
 
 ### Linting and Formatting
 
@@ -385,7 +461,7 @@ The application supports multiple AI providers through LiteLLM. To switch provid
 4. **Restart the backend:**
    ```bash
    # If using Docker
-   docker-compose restart backend
+   docker compose restart backend
 
    # If running locally
    cd backend
