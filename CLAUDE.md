@@ -182,7 +182,16 @@ Follow the appropriate guidelines below based on the context.
    - Identify the specific concern or question being raised
 
 2. **Reply In-Thread**
-   - Use `gh pr review --comment` to reply directly in the discussion thread
+   - To reply to a specific review comment thread, use the GitHub API:
+     ```bash
+     gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments/COMMENT_ID/replies \
+       -X POST -f body="Your threaded reply here"
+     ```
+   - To get the comment ID, fetch PR comments:
+     ```bash
+     gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments
+     ```
+   - **Note**: `gh pr review --comment` creates top-level PR comments, NOT threaded replies
    - **NEVER mark comments as resolved** - let the reviewer resolve them
    - Keep replies focused and concise
 
