@@ -167,7 +167,12 @@ The project is currently in **Phase 3** (AI Integration - Complete). See README.
 
 ### PR Discussion & Comment Management
 
-When Claude is mentioned (@claude) in PR comments or reviews, follow these guidelines:
+When addressing PR feedback, there are two scenarios:
+
+1. **In GitHub PR Comments**: When @claude is mentioned in a PR review comment/discussion on GitHub
+2. **In Claude Code Session**: When the user asks you to address PR comments directly in a Claude Code session
+
+Follow the appropriate guidelines below based on the context.
 
 #### Responding to PR Comments
 
@@ -183,7 +188,8 @@ When Claude is mentioned (@claude) in PR comments or reviews, follow these guide
 
 3. **Comment Reply Format**
    ```markdown
-   Thanks for the feedback! [Acknowledge the specific point]
+   [Vary your greeting - examples: "Thanks for catching that!", "Good point!",
+    "You're right!", "Agreed!", etc. - Acknowledge the specific point]
 
    [Explain what changes were made or will be made]
 
