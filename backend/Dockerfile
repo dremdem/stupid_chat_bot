@@ -5,11 +5,11 @@ WORKDIR /app
 # Install uv for faster package installation
 RUN pip install uv
 
-# Copy requirements file
-COPY requirements.txt .
+# Copy project files for dependency installation
+COPY pyproject.toml uv.lock ./
 
-# Install dependencies using uv
-RUN uv pip install --system -r requirements.txt
+# Install dependencies from lock file (production only, no editable install)
+RUN uv sync --frozen --no-dev --no-editable
 
 # Copy application code
 COPY . .
