@@ -131,10 +131,13 @@ create_venv() {
 install_dependencies() {
     print_info "Installing dependencies..."
 
-    # Install all dependencies including dev extras
-    uv sync --all-extras
+    # Install production + dev-local dependencies only
+    # This excludes heavy test dependencies (pytest suite)
+    uv sync --extra dev-local
 
     print_success "Dependencies installed successfully"
+    print_info "Installed: Production dependencies + local dev tools (black, ruff, pre-commit, invoke)"
+    print_info "Test tools (pytest) will run in Docker via 'invoke test'"
 }
 
 # Verify installation
@@ -151,17 +154,24 @@ verify_installation() {
         print_warning "invoke not found in PATH"
     fi
 
-    # Check other key tools
-    if command -v pytest &> /dev/null; then
-        print_success "pytest is available"
-    fi
-
+    # Check local dev tools
     if command -v black &> /dev/null; then
         print_success "black is available"
     fi
 
     if command -v ruff &> /dev/null; then
         print_success "ruff is available"
+    fi
+
+    if command -v pre-commit &> /dev/null; then
+        print_success "pre-commit is available"
+    fi
+
+    # Verify pytest is NOT installed locally (expected)
+    if command -v pytest &> /dev/null; then
+        print_warning "pytest is installed locally (will run in Docker)"
+    else
+        print_success "pytest not installed locally (will run in Docker)"
     fi
 
     deactivate
@@ -197,6 +207,12 @@ main() {
     echo ""
     print_success "=== Setup Complete ==="
     echo ""
+    print_info "Local environment optimized for speed!"
+    echo ""
+    print_info "Installed tools:"
+    echo "  ✓ black, ruff, pre-commit, invoke (local execution)"
+    echo "  ✓ Tests will run in Docker via 'invoke test'"
+    echo ""
     print_info "To activate the environment, run:"
     echo -e "  ${GREEN}source $VENV_DIR/bin/activate${NC}"
     echo ""
@@ -204,10 +220,13 @@ main() {
     echo -e "  ${GREEN}source ./activate_env.sh${NC}"
     echo ""
     print_info "Available tasks (run 'invoke --list' after activation):"
-    echo "  - invoke test      : Run tests"
-    echo "  - invoke lint      : Run linting checks"
-    echo "  - invoke format    : Format code"
-    echo "  - invoke clean     : Clean cache files"
+    echo "  - invoke test        : Run tests in Docker (auto-starts if needed)"
+    echo "  - invoke test-local  : Run tests locally (requires dev-test deps)"
+    echo "  - invoke lint        : Run linting checks locally (fast)"
+    echo "  - invoke format      : Format code locally (fast)"
+    echo "  - invoke check       : Run all checks (hybrid: local + Docker)"
+    echo "  - invoke lint-docker : Run linting in Docker (CI consistency)"
+    echo "  - invoke format-docker : Run formatting in Docker (CI consistency)"
     echo ""
 }
 

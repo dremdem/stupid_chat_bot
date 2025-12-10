@@ -32,9 +32,30 @@ docker compose up --build
 
 For running tests, linting, and other service tasks locally (not for production).
 
+### Hybrid Workflow: Local + Docker
+
+This project uses a **hybrid development workflow** to optimize for speed and consistency:
+
+**Local execution (fast):**
+- Code formatting (black)
+- Linting (ruff)
+- Pre-commit hooks
+- Task automation (invoke)
+- ~20 packages installed
+
+**Docker execution (consistent):**
+- Tests (pytest suite)
+- Ensures CI/production parity
+
+**Why hybrid?**
+- Local tools are ~3x faster (no Docker overhead)
+- Test environment consistency (Docker = CI = Production)
+- Smaller local installation (~20 packages vs 66+)
+
 #### Prerequisites
 - Python 3.12+
 - Bash shell (Linux/macOS)
+- Docker (for running tests)
 
 #### Initial Setup
 
@@ -105,9 +126,10 @@ invoke --list
 
 #### Testing
 
-Run tests:
+**Run tests in Docker (recommended):**
 ```bash
 invoke test
+# Auto-starts Docker if needed
 ```
 
 Run tests with verbose output:
@@ -119,6 +141,16 @@ Run tests with coverage report:
 ```bash
 invoke test --coverage
 ```
+
+**Run tests locally (for IDE integration):**
+```bash
+# First, install test dependencies
+uv sync --extra dev-test
+
+# Then run tests
+invoke test-local
+```
+This is useful for IDE integration and debugging, but most developers should use `invoke test` (Docker).
 
 #### Code Quality
 
@@ -196,6 +228,41 @@ ruff check .
 #### Testing
 ```bash
 pytest
+```
+
+### Docker vs Local
+
+#### When to use Docker
+- Running tests (`invoke test`)
+- CI consistency checks (`invoke lint-docker`, `invoke format-docker`)
+- Full application testing with dependencies
+- When you need exact production parity
+
+#### When to use local
+- Code formatting (`invoke format`)
+- Linting (`invoke lint`)
+- Pre-commit hooks
+- Quick iteration cycles
+- When speed matters
+
+#### Switching between environments
+
+**Local to Docker:**
+```bash
+# Format locally (fast)
+invoke format
+
+# Run tests in Docker (consistent)
+invoke test
+```
+
+**Docker to local:**
+```bash
+# Install test dependencies if needed
+uv sync --extra dev-test
+
+# Run tests locally (for debugging)
+invoke test-local
 ```
 
 ### Dependency Management
@@ -308,3 +375,49 @@ If dependencies fail to install, try:
    ```bash
    uv lock --check
    ```
+
+### Docker not starting for tests
+
+If `invoke test` fails to start Docker:
+
+1. Check Docker is installed and running:
+   ```bash
+   docker --version
+   docker compose version
+   ```
+
+2. Manually start Docker services:
+   ```bash
+   cd /Users/dremdem/work/study/stupid_chat_bot
+   docker compose up -d backend
+   ```
+
+3. Check container logs:
+   ```bash
+   docker compose logs backend
+   ```
+
+### pytest not found locally
+
+This is **expected behavior**. Tests run in Docker by default:
+
+```bash
+invoke test  # Runs in Docker
+```
+
+If you need pytest locally for IDE integration:
+
+```bash
+uv sync --extra dev-test
+invoke test-local
+```
+
+### Want full local environment
+
+To install all dependencies locally (tests + linters):
+
+```bash
+uv sync --all-extras
+```
+
+This installs ~66 packages instead of ~20, but gives you full local testing.

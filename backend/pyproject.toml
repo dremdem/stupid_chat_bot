@@ -14,14 +14,30 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Local development tools - for fast linting, formatting, and task automation
+dev-local = [
+    "black==24.10.0",
+    "ruff==0.8.4",
+    "pre-commit==4.0.1",
+    "invoke>=2.2.0",
+]
+
+# Test tools - heavy dependencies for running tests
+dev-test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+]
+
+# Complete dev environment (backwards compatibility)
 dev = [
     "black==24.10.0",
     "ruff==0.8.4",
     "pre-commit==4.0.1",
+    "invoke>=2.2.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
-    "invoke>=2.2.0",
 ]
 
 [build-system]
