@@ -26,6 +26,24 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
 ## Development Commands
 
 ### Backend
+
+#### Automated Setup (Recommended for First Time)
+```bash
+cd backend
+# Make scripts executable (one-time setup after cloning)
+chmod +x setup_local_env.sh activate_env.sh cleanup_env.sh
+
+# Run automated setup
+./setup_local_env.sh
+
+# Activate the environment
+source ./activate_env.sh
+
+# Run development server
+invoke dev
+```
+
+#### Manual Setup
 ```bash
 cd backend
 uv sync
