@@ -104,12 +104,10 @@ def lint(c, fix=False):
     """
     Run linting checks using ruff.
 
-    Explicitly checks app/ directory (recursively) and tasks.py file.
-
     Args:
         fix: Automatically fix linting issues where possible
     """
-    cmd = "ruff check app/ tasks.py"
+    cmd = "ruff check ."
 
     if fix:
         cmd += " --fix"
@@ -328,7 +326,6 @@ def lint_docker(c, fix=False):
     """
     Run linting checks using ruff in Docker container.
 
-    Explicitly checks app/ directory (recursively) and tasks.py file.
     This ensures CI consistency. For local development, use 'invoke lint'.
 
     Args:
@@ -337,7 +334,7 @@ def lint_docker(c, fix=False):
     if not ensure_docker_running(c):
         return
 
-    cmd = "ruff check app/ tasks.py"
+    cmd = "ruff check ."
 
     if fix:
         cmd += " --fix"
