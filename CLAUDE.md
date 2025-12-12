@@ -26,6 +26,28 @@ This is the "Stupid Chat Bot" - a simple, straightforward AI-powered chat applic
 ## Development Commands
 
 ### Backend
+
+#### Automated Setup (Recommended for First Time)
+```bash
+cd backend
+# Make scripts executable (one-time setup after cloning)
+chmod +x setup_local_env.sh activate_env.sh cleanup_env.sh
+
+# Run automated setup (installs local dev tools only - ~20 packages)
+./setup_local_env.sh
+
+# Activate the environment
+source ./activate_env.sh
+
+# Run tests in Docker (auto-starts)
+invoke test
+
+# Run linters locally (fast)
+invoke lint
+invoke format
+```
+
+#### Manual Setup
 ```bash
 cd backend
 uv sync
@@ -62,6 +84,46 @@ This will start both backend and frontend services:
 
 The backend uses `uv` with `pyproject.toml` + `uv.lock` for reproducible dependency management.
 
+#### Dependency Groups
+
+Dependencies are organized into three groups:
+
+1. **Production** (`[project.dependencies]`): Core application dependencies
+   - fastapi, uvicorn, pydantic, litellm, etc.
+   - Always installed
+
+2. **dev-local** (`[project.optional-dependencies.dev-local]`): Local development tools
+   - black, ruff, pre-commit, invoke
+   - Fast execution, ~4 packages
+   - Installed by default with `./setup_local_env.sh`
+
+3. **dev-test** (`[project.optional-dependencies.dev-test]`): Test dependencies
+   - pytest, pytest-asyncio, pytest-cov
+   - Heavy dependencies, ~3 packages
+   - Run in Docker by default
+
+4. **dev** (`[project.optional-dependencies.dev]`): Complete dev environment
+   - Includes both dev-local + dev-test
+   - Backwards compatibility
+
+#### Hybrid Workflow
+
+The project uses a **hybrid approach** for optimal speed and consistency:
+
+**Local (fast):**
+- `invoke format` - black formatting
+- `invoke lint` - ruff linting
+- `invoke precommit` - pre-commit hooks
+
+**Docker (consistent):**
+- `invoke test` - pytest suite (auto-starts Docker)
+- `invoke check` - all checks (hybrid: local format/lint, Docker tests)
+
+**Why?**
+- Local linters are 3x faster (no Docker overhead)
+- Docker tests ensure CI parity
+- Smaller local install (~20 packages vs 66+)
+
 #### File Structure
 - `pyproject.toml` - Project metadata and dependency specifications
 - `uv.lock` - Lock file with exact versions and SHA256 hashes (DO NOT edit manually)
@@ -70,19 +132,26 @@ The backend uses `uv` with `pyproject.toml` + `uv.lock` for reproducible depende
 
 #### Installing Dependencies
 
-**Local development**:
+**Local development (default)**:
 ```bash
 cd backend
-# Install production dependencies
-uv sync
+# Install production + local dev tools only (~20 packages)
+./setup_local_env.sh
+# or manually:
+uv sync --extra dev-local
+```
 
-# Install with dev dependencies
+**Full local environment (with tests)**:
+```bash
+cd backend
+# Install production + all dev tools (~66 packages)
 uv sync --all-extras
 ```
 
 **Docker development** (recommended):
 ```bash
 docker compose up --build
+# Automatically uses the 'dev' stage with all dependencies
 ```
 
 #### Adding Dependencies

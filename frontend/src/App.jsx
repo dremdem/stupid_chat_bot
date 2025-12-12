@@ -50,11 +50,13 @@ function App() {
           const currentStreamingMessage = streamingMessageRef.current
           if (currentStreamingMessage) {
             setMessages(prev =>
-              prev.filter(msg => msg != null).map(msg =>
-                msg.id === currentStreamingMessage.id
-                  ? { ...msg, content: msg.content + message.content }
-                  : msg
-              )
+              prev
+                .filter(msg => msg != null)
+                .map(msg =>
+                  msg.id === currentStreamingMessage.id
+                    ? { ...msg, content: msg.content + message.content }
+                    : msg
+                )
             )
           }
         }

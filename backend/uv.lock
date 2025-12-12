@@ -706,6 +706,15 @@ wheels = [
 ]
 
 [[package]]
+name = "invoke"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/bd/b461d3424a24c80490313fd77feeb666ca4f6a28c7e72713e3d9095719b4/invoke-2.2.1.tar.gz", hash = "sha256:515bf49b4a48932b79b024590348da22f39c4942dff991ad1fb8b8baea1be707", size = 304762, upload-time = "2025-10-11T00:36:35.172Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/4b/b99e37f88336009971405cbb7630610322ed6fbfa31e1d7ab3fbf3049a2d/invoke-2.2.1-py3-none-any.whl", hash = "sha256:2413bc441b376e5cd3f55bb5d364f973ad8bdd7bf87e53c79de3c11bf3feecc8", size = 160287, upload-time = "2025-10-11T00:36:33.703Z" },
+]
+
+[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1639,30 +1648,50 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "black" },
+    { name = "invoke" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
+dev-local = [
+    { name = "black" },
+    { name = "invoke" },
+    { name = "pre-commit" },
+    { name = "ruff" },
+]
+dev-test = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = "==24.10.0" },
+    { name = "black", marker = "extra == 'dev-local'", specifier = "==24.10.0" },
     { name = "fastapi", specifier = ">=0.115.5" },
+    { name = "invoke", marker = "extra == 'dev'", specifier = ">=2.2.0" },
+    { name = "invoke", marker = "extra == 'dev-local'", specifier = ">=2.2.0" },
     { name = "litellm", specifier = ">=1.80.5" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.0.1" },
+    { name = "pre-commit", marker = "extra == 'dev-local'", specifier = "==4.0.1" },
     { name = "pydantic", specifier = ">=2.10.3" },
     { name = "pydantic-settings", specifier = ">=2.6.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest", marker = "extra == 'dev-test'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev-test'", specifier = ">=0.24.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
+    { name = "pytest-cov", marker = "extra == 'dev-test'", specifier = ">=5.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.8.4" },
+    { name = "ruff", marker = "extra == 'dev-local'", specifier = "==0.8.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.1" },
     { name = "websockets", specifier = ">=14.1" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev-local", "dev-test", "dev"]
 
 [[package]]
 name = "tiktoken"
