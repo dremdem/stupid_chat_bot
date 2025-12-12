@@ -25,10 +25,7 @@ def ensure_docker_running(c):
     """
     # Check if container exists and is running
     result = c.run(
-        "docker compose ps --status=running -q backend",
-        warn=True,
-        hide=True,
-        echo=False
+        "docker compose ps --status=running -q backend", warn=True, hide=True, echo=False
     )
 
     if result.stdout.strip():
@@ -48,7 +45,7 @@ def ensure_docker_running(c):
             "docker compose exec -T backend python -c 'import app; print(\"ready\")'",
             warn=True,
             hide=True,
-            echo=False
+            echo=False,
         )
         if health_check.exited == 0:
             print("✅ Backend is ready")
@@ -206,11 +203,11 @@ def check(c):
 
     # Check if any failed
     failed = False
-    if format_result and hasattr(format_result, 'exited') and format_result.exited != 0:
+    if format_result and hasattr(format_result, "exited") and format_result.exited != 0:
         failed = True
-    if lint_result and hasattr(lint_result, 'exited') and lint_result.exited != 0:
+    if lint_result and hasattr(lint_result, "exited") and lint_result.exited != 0:
         failed = True
-    if test_result and hasattr(test_result, 'exited') and test_result.exited != 0:
+    if test_result and hasattr(test_result, "exited") and test_result.exited != 0:
         failed = True
 
     if failed:
