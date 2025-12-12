@@ -40,12 +40,23 @@ source "$VENV_DIR/bin/activate"
 if [ -n "$VIRTUAL_ENV" ]; then
     echo -e "${GREEN}[SUCCESS]${NC} Virtual environment activated: $VIRTUAL_ENV"
     echo ""
+
+    # Define shorthand function 'i' for 'invoke'
+    # This provides a convenient alias: 'i test' instead of 'invoke test'
+    i() {
+        invoke "$@"
+    }
+
     echo "Available invoke tasks:"
     echo "  invoke --list      : Show all available tasks"
+    echo "  i --list           : Same as above (shorthand)"
     echo "  invoke test        : Run tests"
+    echo "  i test             : Same as above (shorthand)"
     echo "  invoke lint        : Run linting checks"
     echo "  invoke format      : Format code"
     echo "  invoke clean       : Clean cache files"
+    echo ""
+    echo -e "${GREEN}Tip:${NC} Use 'i' as a shorthand for 'invoke' (e.g., 'i test', 'i lint')"
     echo ""
     echo "To deactivate, run: deactivate"
 else
