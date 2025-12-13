@@ -19,6 +19,7 @@ jobs:
   backend-quality:
     name: Backend Code Quality
     runs-on: ubuntu-latest
+    # Uses uv sync with lock file for reproducible builds (Issue #18 Phase 2)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
