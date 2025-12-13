@@ -33,19 +33,27 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
+      - name: Verify lock file is up to date
+        working-directory: ./backend
+        run: uv lock --check
+
+      - name: Install dependencies from lock file
+        working-directory: ./backend
+        run: uv sync --frozen --extra dev-local
+
+      - name: Verify dependencies installed
         working-directory: ./backend
         run: |
-          uv pip install --system -r requirements.txt
-          uv pip install --system black ruff
+          uv run black --version
+          uv run ruff --version
 
       - name: Format check with Black
         working-directory: ./backend
-        run: black --check .
+        run: uv run black --check .
 
       - name: Lint with Ruff
         working-directory: ./backend
-        run: ruff check .
+        run: uv run ruff check .
 
   frontend-quality:
     name: Frontend Code Quality
