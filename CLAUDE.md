@@ -201,6 +201,46 @@ uv lock --check
 
 This command is useful in CI/CD to ensure the lock file hasn't drifted from the project configuration.
 
+#### Lock File Workflow
+
+The `uv.lock` file ensures reproducible builds with SHA256 hash verification for all dependencies.
+
+**Before committing dependency changes**:
+1. Edit `pyproject.toml` with new dependency (or use `uv add`)
+2. Run `uv lock` to regenerate lock file
+3. Pre-commit hook automatically verifies lock is up to date
+4. CI validates lock file on PR
+
+**Common commands**:
+```bash
+uv add <package>        # Add dependency + auto-lock
+uv lock                 # Regenerate lock file
+uv lock --check         # Verify lock is up to date
+uv lock --upgrade       # Upgrade all dependencies
+invoke lock             # Same as uv lock
+invoke lock --upgrade   # Same as uv lock --upgrade
+```
+
+**Automated verification**:
+- **Pre-commit hook**: Blocks commits if lock file is out of sync
+- **CI check**: Verifies lock file on every PR (Phase 2 complete)
+- **Local check**: Run `uv lock --check` anytime
+
+**What triggers lock file regeneration**:
+- Adding/removing dependencies
+- Updating dependency versions
+- Upgrading dependencies
+- Changes to `pyproject.toml` dependency sections
+
+**Error handling**:
+If pre-commit hook fails with "Lock file is out of date":
+```bash
+cd backend
+uv lock                    # Regenerate lock
+git add uv.lock            # Stage updated lock
+git commit -m "..."        # Commit with lock file
+```
+
 ### Linting and Formatting
 
 #### Backend

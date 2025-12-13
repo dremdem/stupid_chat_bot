@@ -211,6 +211,66 @@ Run pre-commit on all files:
 invoke precommit --all-files
 ```
 
+### Lock File Management
+
+The project uses `uv.lock` for reproducible dependency management with SHA256 hash verification.
+
+#### When Lock File Updates
+
+The lock file must be regenerated when:
+- Adding/removing dependencies in `pyproject.toml`
+- Updating dependency versions
+- Running `uv add` or `uv remove`
+- Upgrading dependencies with `invoke lock --upgrade`
+
+#### Verification
+
+**Pre-commit hook**: Automatically checks lock file before commit
+- Runs `uv lock --check` when `pyproject.toml` or `uv.lock` changes
+- Blocks commit if lock file is out of sync
+- Provides clear error message with fix instructions
+
+**CI check**: Verifies lock file on every PR
+- Runs in GitHub Actions on all PRs
+- Ensures lock file matches `pyproject.toml`
+- Prevents merging out-of-sync dependencies
+
+**Local check**: Manually verify anytime
+```bash
+cd backend
+uv lock --check
+```
+
+#### Common Errors
+
+**Error**: "Lock file is out of date"
+```bash
+# Solution
+cd backend
+uv lock
+git add uv.lock
+```
+
+**Error**: "Dependency conflict during lock"
+```bash
+# See detailed resolution
+cd backend
+uv lock --verbose
+```
+
+**Error**: "Pre-commit hook fails on lock check"
+```bash
+# Regenerate lock file
+cd backend
+uv lock
+
+# Stage both files
+git add pyproject.toml uv.lock
+
+# Commit again
+git commit -m "update dependencies"
+```
+
 ### Manual Commands
 
 If you prefer not to use invoke, you can run commands directly:

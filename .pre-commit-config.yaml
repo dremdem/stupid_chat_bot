@@ -24,6 +24,16 @@ repos:
         name: Format Python code with Ruff
         files: ^backend/
 
+  # UV lock file verification
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: Verify uv.lock is up to date
+        entry: bash -c 'cd backend && uv lock --check'
+        language: system
+        files: ^backend/(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
   # Frontend JavaScript/TypeScript hooks
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.15.0
