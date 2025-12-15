@@ -15,7 +15,7 @@ vi.mock('../services/websocket', () => ({
 }))
 
 // Helper to render with providers
-const renderWithProviders = (component) => {
+const renderWithProviders = component => {
   return render(<ThemeProvider>{component}</ThemeProvider>)
 }
 
