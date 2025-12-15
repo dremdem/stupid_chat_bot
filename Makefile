@@ -31,19 +31,19 @@ build: ## Build both frontend and backend
 
 test: ## Run tests for both ecosystems
 	@echo "Running backend tests..."
-	cd backend && uv run invoke test
+	cd backend && uv run --extra dev-local invoke test
 	@echo "Running frontend tests..."
 	cd frontend && npm run test
 
 lint: ## Run linters for both ecosystems
 	@echo "Linting backend..."
-	cd backend && uv run invoke lint
+	cd backend && uv run --extra dev-local invoke lint
 	@echo "Linting frontend..."
 	cd frontend && npm run lint
 
 format: ## Format code for both ecosystems
 	@echo "Formatting backend..."
-	cd backend && uv run invoke format
+	cd backend && uv run --extra dev-local invoke format
 	@echo "Formatting frontend..."
 	cd frontend && npm run format
 
@@ -55,7 +55,7 @@ check: ## Run all checks (format, lint, test) for both ecosystems
 
 clean: ## Clean build artifacts and caches
 	@echo "Cleaning backend..."
-	cd backend && uv run invoke clean
+	cd backend && uv run --extra dev-local invoke clean
 	@echo "Cleaning frontend..."
 	cd frontend && npm run clean || echo "No clean script (will be added)"
 	@echo "Cleaning Docker..."
@@ -63,13 +63,13 @@ clean: ## Clean build artifacts and caches
 
 install: ## Install dependencies for both ecosystems
 	@echo "Installing backend dependencies..."
-	cd backend && uv run invoke install
+	cd backend && uv sync --all-extras
 	@echo "Installing frontend dependencies..."
 	cd frontend && npm install
 
 ci: ## Run CI pipeline (matches GitHub Actions)
 	@echo "Running CI pipeline..."
-	cd backend && uv run invoke ci
+	cd backend && uv run --extra dev-local invoke ci
 	cd frontend && npm run ci
 
 #===============================================================================
@@ -77,7 +77,7 @@ ci: ## Run CI pipeline (matches GitHub Actions)
 #===============================================================================
 
 backend-%: ## Run any backend invoke task (e.g., make backend-lint)
-	cd backend && uv run invoke $*
+	cd backend && uv run --extra dev-local invoke $*
 
 frontend-%: ## Run any frontend npm script (e.g., make frontend-dev)
 	cd frontend && npm run $*
