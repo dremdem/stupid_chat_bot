@@ -456,7 +456,84 @@ For the "most fancy" chat experience, we recommend:
 
 ### Development Setup
 
-(To be completed in Phase 1)
+#### Quick Start with Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/dremdem/stupid_chat_bot.git
+cd stupid_chat_bot
+
+# Copy environment file and configure
+cp backend/.env.example backend/.env
+# Edit backend/.env with your AI provider API key
+
+# Start both backend and frontend
+make dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+#### Using Make for Task Orchestration
+
+The project provides a unified `make` interface for common tasks across both backend and frontend:
+
+**View all available commands:**
+```bash
+make help
+```
+
+**Common development tasks:**
+```bash
+make dev           # Start development servers (Docker)
+make test          # Run tests for both ecosystems
+make lint          # Run linters for both ecosystems
+make format        # Format code for both ecosystems
+make check         # Run all checks (format + lint + test)
+make ci            # Run CI pipeline locally
+make build         # Build both frontend and backend
+make clean         # Clean build artifacts and caches
+make install       # Install dependencies for both ecosystems
+```
+
+**Run ecosystem-specific tasks:**
+```bash
+# Backend tasks (delegates to invoke)
+make backend-lint
+make backend-format
+make backend-test
+make backend-dev
+
+# Frontend tasks (delegates to npm)
+make frontend-lint
+make frontend-format
+make frontend-test
+make frontend-dev
+```
+
+#### Local Development (Without Docker)
+
+**Backend:**
+```bash
+cd backend
+./setup_local_env.sh      # Install dependencies
+source activate_env.sh     # Activate virtual environment
+invoke dev                 # Start development server
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install                # Install dependencies
+npm run dev                # Start development server
+```
+
+For more details, see:
+- [Backend README](backend/README.md) for Python/FastAPI development
+- [Frontend README](frontend/README.md) for React development
+- [Architecture Documentation](docs/multi-ecosystem-task-runner.md) for task runner details
 
 ### Environment Variables
 

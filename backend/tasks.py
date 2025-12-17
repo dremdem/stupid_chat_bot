@@ -373,3 +373,57 @@ def format_docker(c, check=False):
         return result
     elif not check:
         print("\n✅ Code formatted!")
+
+
+@task
+def ci(c):
+    """
+    Run complete CI pipeline (format check + lint + tests).
+
+    This task mirrors the GitHub Actions workflow and should pass
+    before pushing code. All checks run locally for fast feedback.
+    """
+    print("=" * 60)
+    print("Running CI Pipeline")
+    print("=" * 60)
+
+    # Track failures
+    failed = []
+
+    # 1. Format check
+    print("\n" + "=" * 60)
+    print("1/3: Format Check")
+    print("=" * 60)
+    format_result = c.run("black . --check", warn=True, pty=True)
+    if format_result.exited != 0:
+        failed.append("Format check")
+
+    # 2. Lint
+    print("\n" + "=" * 60)
+    print("2/3: Lint")
+    print("=" * 60)
+    lint_result = c.run("ruff check .", warn=True, pty=True)
+    if lint_result.exited != 0:
+        failed.append("Lint")
+
+    # 3. Tests (if tests directory exists)
+    if os.path.exists("tests"):
+        print("\n" + "=" * 60)
+        print("3/3: Tests")
+        print("=" * 60)
+        test(c)
+    else:
+        print("\n" + "=" * 60)
+        print("3/3: Tests - SKIPPED (no tests directory)")
+        print("=" * 60)
+
+    # Summary
+    print("\n" + "=" * 60)
+    if failed:
+        print(f"❌ CI Failed: {', '.join(failed)}")
+        print("=" * 60)
+        return False
+    else:
+        print("✅ CI Passed")
+        print("=" * 60)
+        return True
