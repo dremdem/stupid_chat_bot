@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     google_api_key: str = ""
 
+    # Database Configuration
+    database_path: str = "data/chat.db"  # Relative to project root
+    database_echo: bool = False  # Enable SQL logging for debugging
+
+    @property
+    def database_url(self) -> str:
+        """Get database URL for SQLAlchemy."""
+        return f"sqlite+aiosqlite:///{self.database_path}"
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
