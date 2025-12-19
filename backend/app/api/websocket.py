@@ -23,15 +23,13 @@ class ConnectionManager:
         # Map of websocket -> (session_id, conversation_history)
         self.connection_sessions: dict[WebSocket, tuple[uuid.UUID, list[dict]]] = {}
 
-    async def connect(
+    def register(
         self,
         websocket: WebSocket,
         session_id: uuid.UUID,
         history: list[dict],
     ):
-        """Accept and register a new WebSocket connection for a session."""
-        await websocket.accept()
-
+        """Register a WebSocket connection for a session (after accept)."""
         # Track connection for this session
         if session_id not in self.session_connections:
             self.session_connections[session_id] = []
@@ -124,6 +122,11 @@ async def websocket_endpoint(
     - AI response generation
     - Session-scoped message broadcasting
     """
+    # IMPORTANT: Accept the WebSocket FIRST before any async database operations.
+    # This prevents "WebSocket closed before connection established" errors
+    # if database calls fail or timeout.
+    await websocket.accept()
+
     try:
         # Get session and history
         if session_id:
@@ -139,8 +142,8 @@ async def websocket_endpoint(
             # Use default session
             session_id, history = await chat_service.get_or_create_session()
 
-        # Register connection
-        await manager.connect(websocket, session_id, history)
+        # Register connection (websocket already accepted above)
+        manager.register(websocket, session_id, history)
 
         # Send connection confirmation with session info
         await manager.send_to_client(
@@ -265,5 +268,12 @@ async def websocket_endpoint(
         manager.disconnect(websocket)
         logger.info("Client disconnected normally")
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {e}", exc_info=True)
+        # Try to send error message to client before closing
+        try:
+            await websocket.send_text(
+                json.dumps({"type": "error", "content": f"Server error: {str(e)}"})
+            )
+        except Exception:
+            pass  # Client may already be disconnected
         manager.disconnect(websocket)
