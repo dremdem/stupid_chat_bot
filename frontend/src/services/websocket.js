@@ -11,6 +11,7 @@ class WebSocketService {
     this.maxReconnectAttempts = 5
     this.reconnectDelay = 2000
     this.shouldReconnect = true
+    this.reconnectTimeout = null
   }
 
   /**
@@ -75,7 +76,10 @@ class WebSocketService {
       console.log(
         `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       )
-      setTimeout(() => this.connect(url), this.reconnectDelay)
+      this.reconnectTimeout = setTimeout(() => {
+        this.reconnectTimeout = null
+        this.connect(url)
+      }, this.reconnectDelay)
     } else {
       console.error('Max reconnection attempts reached')
       this.notifyConnectionHandlers('failed')
@@ -147,8 +151,25 @@ class WebSocketService {
    */
   disconnect() {
     this.shouldReconnect = false
+
+    // Clear any pending reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout)
+      this.reconnectTimeout = null
+    }
+
     if (this.ws) {
-      this.ws.close()
+      if (this.ws.readyState === WebSocket.OPEN) {
+        // Only close if actually open
+        this.ws.close()
+      } else if (this.ws.readyState === WebSocket.CONNECTING) {
+        // Don't close CONNECTING sockets - causes "closed before established" error
+        // Instead, nullify handlers so this stale connection doesn't interfere
+        this.ws.onopen = null
+        this.ws.onclose = null
+        this.ws.onerror = null
+        this.ws.onmessage = null
+      }
       this.ws = null
     }
   }
