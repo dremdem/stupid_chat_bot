@@ -38,9 +38,7 @@ class SessionRepository(BaseRepository[ChatSession]):
         """
         # Try to find existing default session
         result = await self.session.execute(
-            select(ChatSession).where(
-                ChatSession.meta["is_default"].as_boolean().is_(True)
-            )
+            select(ChatSession).where(ChatSession.meta["is_default"].as_boolean().is_(True))
         )
         default_session = result.scalar_one_or_none()
 
