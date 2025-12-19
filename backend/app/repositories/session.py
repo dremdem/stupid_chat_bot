@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -131,3 +131,66 @@ class SessionRepository(BaseRepository[ChatSession]):
             title += "..."
 
         return await self.update(session_id, title=title)
+
+    async def get_all_ordered(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[ChatSession]:
+        """
+        Get all sessions ordered by most recent activity.
+
+        Args:
+            limit: Maximum number of sessions to return
+            offset: Number of sessions to skip
+
+        Returns:
+            List of ChatSession instances ordered by updated_at desc
+        """
+        result = await self.session.execute(
+            select(ChatSession).order_by(ChatSession.updated_at.desc()).limit(limit).offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def create_new_session(
+        self,
+        title: str = "New Chat",
+    ) -> ChatSession:
+        """
+        Create a new chat session.
+
+        Args:
+            title: Title for the new session
+
+        Returns:
+            Created ChatSession instance
+        """
+        return await self.create(
+            title=title,
+            meta={},
+        )
+
+    async def count_sessions(self) -> int:
+        """
+        Count total number of sessions.
+
+        Returns:
+            Total session count
+        """
+        result = await self.session.execute(select(func.count()).select_from(ChatSession))
+        return result.scalar_one()
+
+    async def is_default_session(self, session_id: uuid.UUID) -> bool:
+        """
+        Check if a session is the default session.
+
+        Args:
+            session_id: UUID of the session to check
+
+        Returns:
+            True if this is the default session
+        """
+        session = await self.get_by_id(session_id)
+        if session is None:
+            return False
+        return session.meta.get("is_default", False) is True
