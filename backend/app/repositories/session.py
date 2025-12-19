@@ -37,10 +37,14 @@ class SessionRepository(BaseRepository[ChatSession]):
             The default ChatSession instance
         """
         # Try to find existing default session
+        # Use scalars().first() instead of scalar_one_or_none() to handle
+        # potential duplicate default sessions gracefully (race condition during creation)
         result = await self.session.execute(
-            select(ChatSession).where(ChatSession.meta["is_default"].as_boolean().is_(True))
+            select(ChatSession)
+            .where(ChatSession.meta["is_default"].as_boolean().is_(True))
+            .order_by(ChatSession.created_at.asc())  # Consistently pick the oldest
         )
-        default_session = result.scalar_one_or_none()
+        default_session = result.scalars().first()
 
         if default_session is not None:
             return default_session
