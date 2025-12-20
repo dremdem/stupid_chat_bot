@@ -12,13 +12,31 @@ class WebSocketService {
     this.reconnectDelay = 2000
     this.shouldReconnect = true
     this.reconnectTimeout = null
+    this.currentUrl = null
+    this.currentSessionId = null
+  }
+
+  /**
+   * Build WebSocket URL with optional session ID
+   * @param {string|null} sessionId - Optional session UUID
+   * @returns {string} WebSocket URL
+   */
+  buildUrl(sessionId = null) {
+    const baseUrl = 'ws://localhost:8000/ws/chat'
+    if (sessionId) {
+      return `${baseUrl}?session_id=${sessionId}`
+    }
+    return baseUrl
   }
 
   /**
    * Connect to the WebSocket server
-   * @param {string} url - WebSocket server URL
+   * @param {string|null} sessionId - Optional session UUID to connect to
    */
-  connect(url = 'ws://localhost:8000/ws/chat') {
+  connect(sessionId = null) {
+    const url = this.buildUrl(sessionId)
+    this.currentUrl = url
+    this.currentSessionId = sessionId
     // Prevent multiple connections
     if (
       this.ws &&
@@ -57,7 +75,7 @@ class WebSocketService {
         this.notifyConnectionHandlers('disconnected')
         // Only attempt reconnect if not explicitly disconnected
         if (this.shouldReconnect) {
-          this.attemptReconnect(url)
+          this.attemptReconnect()
         }
       }
     } catch (error) {
@@ -68,9 +86,8 @@ class WebSocketService {
 
   /**
    * Attempt to reconnect to the WebSocket server
-   * @param {string} url - WebSocket server URL
    */
-  attemptReconnect(url) {
+  attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
       console.log(
@@ -78,12 +95,33 @@ class WebSocketService {
       )
       this.reconnectTimeout = setTimeout(() => {
         this.reconnectTimeout = null
-        this.connect(url)
+        this.connect(this.currentSessionId)
       }, this.reconnectDelay)
     } else {
       console.error('Max reconnection attempts reached')
       this.notifyConnectionHandlers('failed')
     }
+  }
+
+  /**
+   * Switch to a different session
+   * @param {string|null} sessionId - Session UUID to switch to
+   */
+  switchSession(sessionId) {
+    console.log(`Switching to session: ${sessionId || 'default'}`)
+    this.disconnect()
+    // Small delay to ensure clean disconnect before reconnecting
+    setTimeout(() => {
+      this.connect(sessionId)
+    }, 100)
+  }
+
+  /**
+   * Get current session ID
+   * @returns {string|null} Current session ID
+   */
+  getSessionId() {
+    return this.currentSessionId
   }
 
   /**
