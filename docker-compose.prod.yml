@@ -1,0 +1,46 @@
+# Production docker-compose for DigitalOcean deployment
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  backend:
+    image: ghcr.io/dremdem/stupid_chat_bot-backend:latest
+    container_name: stupidbot-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_PATH=/app/data/chat.db
+    env_file:
+      - .env
+    volumes:
+      - chat_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - stupidbot-network
+
+  frontend:
+    image: ghcr.io/dremdem/stupid_chat_bot-frontend:latest
+    container_name: stupidbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - stupidbot-network
+
+volumes:
+  chat_data:
+    name: stupidbot-data
+
+networks:
+  stupidbot-network:
+    driver: bridge
