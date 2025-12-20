@@ -1,6 +1,14 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--body-bg, #0f0f1a);
+}
+
 .app {
   display: flex;
   flex-direction: column;
+  flex: 1;
   height: 100vh;
   max-width: 1200px;
   margin: 0 auto;
@@ -11,6 +19,10 @@
 }
 
 @media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
   .app {
     max-width: 100%;
     height: 100vh;

@@ -1,27 +1,67 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import ChatHeader from './components/ChatHeader'
 import MessageList from './components/MessageList'
 import InputBox from './components/InputBox'
 import TypingIndicator from './components/TypingIndicator'
+import SessionSidebar from './components/SessionSidebar'
 import websocketService from './services/websocket'
+import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
 import './App.css'
 
 function App() {
   const [messages, setMessages] = useState([])
   const [connectionStatus, setConnectionStatus] = useState('connecting')
   const [isTyping, setIsTyping] = useState(false)
+  const [sessions, setSessions] = useState([])
+  const [currentSessionId, setCurrentSessionId] = useState(null)
+  const [sessionsLoading, setSessionsLoading] = useState(true)
   const streamingMessageRef = useRef(null)
   const hasConnectedOnce = useRef(false)
 
+  // Load sessions on mount
   useEffect(() => {
-    // Connect to WebSocket
-    websocketService.connect()
+    const loadSessions = async () => {
+      try {
+        setSessionsLoading(true)
+        const data = await fetchSessions()
+        setSessions(data.sessions)
+        // If we have sessions but no current session selected, select the first one
+        if (data.sessions.length > 0) {
+          // Find default session or use first
+          const defaultSession = data.sessions.find(s => s.metadata?.is_default)
+          setCurrentSessionId(prev => prev || defaultSession?.id || data.sessions[0].id)
+        }
+      } catch (error) {
+        console.error('Failed to load sessions:', error)
+        toast.error('Failed to load conversations')
+      } finally {
+        setSessionsLoading(false)
+      }
+    }
 
-    // Handle incoming messages and get cleanup function
+    loadSessions()
+  }, [])
+
+  // Handle WebSocket connection and messages
+  useEffect(() => {
+    // Connect to WebSocket with current session
+    websocketService.connect(currentSessionId)
+
+    // Handle incoming messages
     const cleanupMessageHandler = websocketService.onMessage(message => {
-      // Skip connection system messages (they're redundant with connection status)
+      // Skip connection system messages
       if (message.type === 'system' && message.system_type === 'connection') {
+        return
+      }
+
+      // Handle history messages from server
+      if (message.type === 'history') {
+        const historyMessages = message.messages.map((msg, index) => ({
+          ...msg,
+          id: `history-${index}-${Date.now()}`,
+        }))
+        setMessages(historyMessages)
         return
       }
 
@@ -34,7 +74,6 @@ function App() {
       // Handle AI streaming chunks
       if (message.type === 'ai_stream') {
         if (!streamingMessageRef.current) {
-          // Create new streaming message
           const newMessage = {
             id: Date.now() + Math.random(),
             type: 'message',
@@ -45,8 +84,6 @@ function App() {
           streamingMessageRef.current = newMessage
           setMessages(prev => [...prev, newMessage])
         } else {
-          // Append to existing streaming message
-          // Capture the current ref value to avoid race conditions
           const currentStreamingMessage = streamingMessageRef.current
           if (currentStreamingMessage) {
             setMessages(prev =>
@@ -76,26 +113,22 @@ function App() {
           ...prev,
           {
             ...message,
-            id: Date.now() + Math.random(), // Simple unique ID
+            id: Date.now() + Math.random(),
           },
         ])
       }
     })
 
-    // Handle connection status changes and get cleanup function
+    // Handle connection status changes
     const cleanupConnectionHandler = websocketService.onConnectionChange(status => {
       setConnectionStatus(status)
 
-      // Only show toast notifications after the initial connection
-      // This prevents spam on page load/refresh
       if (status === 'connected') {
         if (hasConnectedOnce.current) {
-          // Reconnection after disconnect
           toast.success('Reconnected to chat server')
         }
         hasConnectedOnce.current = true
       } else if (status === 'disconnected' && hasConnectedOnce.current) {
-        // Only show disconnect if we had connected before
         toast.error('Disconnected from chat server')
       } else if (status === 'failed') {
         toast.error('Connection failed - please refresh the page')
@@ -104,13 +137,60 @@ function App() {
       }
     })
 
-    // Cleanup on unmount
+    // Cleanup on unmount or session change
     return () => {
       cleanupMessageHandler()
       cleanupConnectionHandler()
       websocketService.disconnect()
     }
-  }, [])
+  }, [currentSessionId])
+
+  const handleSelectSession = useCallback(
+    sessionId => {
+      if (sessionId === currentSessionId) return
+
+      // Clear messages and switch session
+      setMessages([])
+      streamingMessageRef.current = null
+      setCurrentSessionId(sessionId)
+    },
+    [currentSessionId]
+  )
+
+  const handleCreateSession = useCallback(async () => {
+    try {
+      const newSession = await createSession()
+      setSessions(prev => [newSession, ...prev])
+      handleSelectSession(newSession.id)
+      toast.success('New conversation created')
+    } catch (error) {
+      console.error('Failed to create session:', error)
+      toast.error('Failed to create conversation')
+    }
+  }, [handleSelectSession])
+
+  const handleDeleteSession = useCallback(
+    async sessionId => {
+      try {
+        await deleteSession(sessionId)
+        setSessions(prev => prev.filter(s => s.id !== sessionId))
+
+        // If we deleted the current session, switch to another
+        if (sessionId === currentSessionId) {
+          const remaining = sessions.filter(s => s.id !== sessionId)
+          if (remaining.length > 0) {
+            handleSelectSession(remaining[0].id)
+          }
+        }
+
+        toast.success('Conversation deleted')
+      } catch (error) {
+        console.error('Failed to delete session:', error)
+        toast.error(error.message || 'Failed to delete conversation')
+      }
+    },
+    [currentSessionId, sessions, handleSelectSession]
+  )
 
   const handleSendMessage = content => {
     const message = {
@@ -123,10 +203,20 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <ChatHeader status={connectionStatus} />
-      <MessageList messages={messages} isTyping={isTyping} TypingIndicator={TypingIndicator} />
-      <InputBox onSendMessage={handleSendMessage} disabled={connectionStatus !== 'connected'} />
+    <div className="app-container">
+      <SessionSidebar
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSelectSession={handleSelectSession}
+        onCreateSession={handleCreateSession}
+        onDeleteSession={handleDeleteSession}
+        isLoading={sessionsLoading}
+      />
+      <div className="app">
+        <ChatHeader status={connectionStatus} />
+        <MessageList messages={messages} isTyping={isTyping} TypingIndicator={TypingIndicator} />
+        <InputBox onSendMessage={handleSendMessage} disabled={connectionStatus !== 'connected'} />
+      </div>
     </div>
   )
 }
