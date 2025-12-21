@@ -18,9 +18,8 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Command will be overridden by docker compose
-# Use uv run to execute within the virtual environment
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run directly from virtual environment (avoids uv runtime issues with Docker seccomp)
+CMD [".venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 
 # Dev stage: Base + all dev dependencies (linters + test tools)
@@ -29,8 +28,8 @@ FROM base AS dev
 # Install all dev dependencies (linters + test tools)
 RUN uv sync --frozen --all-extras --no-editable
 
-# This stage is used for development with hot-reload and running tests
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Dev uses uv run for hot-reload (local Docker usually has newer kernel)
+CMD [".venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 
 # Prod stage: Optimized production image (alias for base)
