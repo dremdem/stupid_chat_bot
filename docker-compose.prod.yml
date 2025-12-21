@@ -16,12 +16,16 @@ services:
       - .env
     volumes:
       - chat_data:/app/data
+    # Required for thread creation on older Docker/kernel versions
+    security_opt:
+      - seccomp:unconfined
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # Use Python for health check (curl not available in slim image)
+      test: ["CMD", ".venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     networks:
       - stupidbot-network
 
