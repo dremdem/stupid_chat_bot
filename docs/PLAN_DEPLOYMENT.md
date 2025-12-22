@@ -2,31 +2,48 @@
 
 This document outlines the deployment strategy for releasing the Stupid Chat Bot application to a DigitalOcean droplet.
 
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Implementation Phases](#implementation-phases)
+- [Phase 1: Production Docker Setup](#phase-1-production-docker-setup)
+- [Phase 2: SQLite Persistence](#phase-2-sqlite-persistence)
+- [Phase 3: GitHub Actions Workflow](#phase-3-github-actions-workflow-build--push)
+- [Phase 4: Manual Server Testing](#phase-4-manual-server-testing)
+- [Phase 5: Host nginx Configuration](#phase-5-host-nginx-configuration-future)
+- [Phase 6: Automated Deployment](#phase-6-automated-deployment-future)
+- [Phase 7: Documentation](#phase-7-documentation-future)
+- [Environment Variables](#environment-variables)
+- [GitHub Secrets Required](#github-secrets-required)
+- [Related Issues](#related-issues)
+
+---
+
 ## Architecture Overview
 
-```
-Internet
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  nginx (host) - stupidbot.dremdem.ru    │
-│  - SSL/TLS (Let's Encrypt)              │
-│  - Reverse proxy                        │
-└─────────────────────────────────────────┘
-    │                           │
-    │ /api/*, /ws/*             │ /*
-    ▼                           ▼
-┌──────────────┐        ┌──────────────┐
-│   Backend    │        │   Frontend   │
-│   :8000      │        │   :3001      │
-│   FastAPI    │        │   nginx      │
-└──────────────┘        └──────────────┘
-         │
-         ▼
-    ┌─────────┐
-    │ SQLite  │
-    │ volume  │
-    └─────────┘
+```mermaid
+graph TB
+    Internet((Internet))
+
+    subgraph Host["Host nginx - stupidbot.dremdem.ru"]
+        SSL["SSL/TLS<br/>Let's Encrypt"]
+        Proxy["Reverse Proxy"]
+    end
+
+    subgraph Containers["Docker Containers"]
+        Backend["Backend<br/>:8000<br/>FastAPI"]
+        Frontend["Frontend<br/>:3001<br/>nginx"]
+    end
+
+    subgraph Storage["Persistent Storage"]
+        SQLite["SQLite<br/>Docker Volume"]
+    end
+
+    Internet --> Host
+    SSL --> Proxy
+    Proxy -->|"/api/*, /ws/*"| Backend
+    Proxy -->|"/*"| Frontend
+    Backend --> SQLite
 ```
 
 ## Implementation Phases

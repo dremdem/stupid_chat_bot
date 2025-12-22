@@ -27,33 +27,40 @@ The automated deployment system provides zero-touch deployment with health check
 
 **Architecture:**
 
-```
-Developer triggers workflow
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  GitHub Actions                         │
-│  1. Build backend image                 │
-│  2. Build frontend image                │
-│  3. Push to GHCR                        │
-│  4. SSH to droplet                      │
-│  5. Generate .env from secrets          │
-│  6. Run deploy.sh                       │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  DigitalOcean Droplet                   │
-│  /opt/stupidbot/                        │
-│  ├── docker-compose.prod.yml            │
-│  ├── .env (generated)                   │
-│  └── deploy.sh                          │
-│                                         │
-│  7. Pull images                         │
-│  8. Restart containers                  │
-│  9. Health check (60s)                  │
-│  10. Success or rollback                │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Dev["Developer triggers workflow"]
+
+    subgraph GHA["GitHub Actions"]
+        Build["1. Build backend image<br/>2. Build frontend image"]
+        Push["3. Push to GHCR"]
+        SSH["4. SSH to droplet"]
+        Env["5. Generate .env from secrets"]
+        Run["6. Run deploy.sh"]
+    end
+
+    subgraph Droplet["DigitalOcean Droplet"]
+        Files["/opt/stupidbot/<br/>├── docker-compose.prod.yml<br/>├── .env (generated)<br/>└── deploy.sh"]
+        Pull["7. Pull images"]
+        Restart["8. Restart containers"]
+        Health["9. Health check (60s)"]
+        Result{"10. Success?"}
+        Success["✓ Done"]
+        Rollback["✗ Rollback"]
+    end
+
+    Dev --> Build
+    Build --> Push
+    Push --> SSH
+    SSH --> Env
+    Env --> Run
+    Run --> Files
+    Files --> Pull
+    Pull --> Restart
+    Restart --> Health
+    Health --> Result
+    Result -->|Yes| Success
+    Result -->|No| Rollback
 ```
 
 **Key Benefits:**
@@ -330,41 +337,18 @@ The deployment scripts are **stored in the repository** and automatically copied
 
 ### Workflow Execution Flow
 
-```
-1. Developer triggers workflow
-                │
-                ▼
-2. Build & push images to GHCR
-   - Backend image
-   - Frontend image
-                │
-                ▼
-3. SSH to droplet (github-deploy user)
-                │
-                ▼
-4. Copy files from repo to server
-   - docker-compose.prod.yml
-   - deploy.sh
-                │
-                ▼
-5. Generate .env from GitHub Secrets
-   - AI_PROVIDER
-   - ANTHROPIC_API_KEY
-   - etc.
-                │
-                ▼
-6. Run deploy.sh
-   - Pull latest images
-   - docker compose up -d
-   - Health check (60s timeout)
-                │
-        ┌───────┴───────┐
-        │               │
-        ▼               ▼
-   ✅ Success      ❌ Failure
-   - Cleanup old   - Show logs
-     images        - Attempt rollback
-   - Exit 0        - Exit 1
+```mermaid
+flowchart TB
+    A["1. Developer triggers workflow"] --> B
+    B["2. Build & push images to GHCR<br/>- Backend image<br/>- Frontend image"] --> C
+    C["3. SSH to droplet<br/>(github-deploy user)"] --> D
+    D["4. Copy files from repo<br/>- docker-compose.prod.yml<br/>- deploy.sh"] --> E
+    E["5. Generate .env from secrets<br/>- AI_PROVIDER<br/>- API keys"] --> F
+    F["6. Run deploy.sh<br/>- Pull images<br/>- docker compose up -d<br/>- Health check (60s)"] --> G
+
+    G{"Result?"}
+    G -->|Success| H["✓ Cleanup old images<br/>Exit 0"]
+    G -->|Failure| I["✗ Show logs<br/>Attempt rollback<br/>Exit 1"]
 ```
 
 ### Health Check

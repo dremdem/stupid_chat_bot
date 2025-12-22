@@ -88,8 +88,22 @@ AI_PROVIDER=anthropic  # or: openai, google, meta, deepseek
 ANTHROPIC_API_KEY=your-key
 ```
 
+## Documentation Guidelines
+
+When creating or updating documentation:
+
+1. **Table of Contents**: Every document must have a TOC at the top with anchor links
+2. **Mermaid Diagrams**: Use [Mermaid.js](https://mermaid.js.org/) for all diagrams (no ASCII art)
+3. **Cross-References**: Link to related documents where applicable
+4. **Code Examples**: Include runnable examples where possible
+5. **Keep Updated**: Update docs when code changes
+
+Documentation index: See [docs/README.md](./docs/README.md)
+
 ## Additional Resources
 
 - **Architecture & Roadmap**: See [README.md](./README.md)
+- **Documentation Index**: See [docs/README.md](./docs/README.md)
+- **Deployment Guide**: See [docs/AUTOMATED_DEPLOYMENT.md](./docs/AUTOMATED_DEPLOYMENT.md)
 - **PR Comment Workflows**: See [.claude/workflows/pr-comments.md](.claude/workflows/pr-comments.md)
 - **Git Worktrees**: See [.claude/workflows/git-worktrees.md](.claude/workflows/git-worktrees.md)
