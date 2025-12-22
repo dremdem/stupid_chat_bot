@@ -18,7 +18,7 @@ Internet
     ▼                           ▼
 ┌──────────────┐        ┌──────────────┐
 │   Backend    │        │   Frontend   │
-│   :8000      │        │   :3000      │
+│   :8000      │        │   :3001      │
 │   FastAPI    │        │   nginx      │
 └──────────────┘        └──────────────┘
          │
@@ -127,7 +127,7 @@ services:
     container_name: stupidbot-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3001}:3000"  # Configurable host port, default 3001
     depends_on:
       backend:
         condition: service_healthy
@@ -317,7 +317,11 @@ curl ifconfig.me
 curl http://YOUR_SERVER_IP:8000/health
 
 # Test frontend (open in browser)
-# http://YOUR_SERVER_IP:3000
+# http://YOUR_SERVER_IP:3001
+
+# Note: Frontend port is configurable via FRONTEND_PORT env var
+# Default is 3001. To use a different port:
+# FRONTEND_PORT=8080 docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### 4.6 Troubleshooting
@@ -327,8 +331,8 @@ curl http://YOUR_SERVER_IP:8000/health
 docker logs stupidbot-backend
 docker logs stupidbot-frontend
 
-# Check if ports are open
-sudo netstat -tlnp | grep -E '3000|8000'
+# Check if ports are open (default frontend port is 3001)
+sudo netstat -tlnp | grep -E '3001|8000'
 
 # Restart containers
 docker compose -f docker-compose.prod.yml restart
@@ -378,9 +382,9 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Frontend
+    # Frontend (default port 3001, configurable via FRONTEND_PORT)
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -405,6 +409,22 @@ Will add deploy job to workflow that:
 - Complete DEPLOYMENT.md guide
 - Backup and restore procedures
 - Monitoring and logging setup
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FRONTEND_PORT` | `3001` | Host port for frontend container |
+| `AI_PROVIDER` | `anthropic` | AI provider (anthropic, openai, google, deepseek) |
+| `DATABASE_PATH` | `/app/data/chat.db` | SQLite database path inside container |
+
+Example usage:
+```bash
+# Use custom frontend port
+FRONTEND_PORT=8080 docker compose -f docker-compose.prod.yml up -d
+```
 
 ---
 
