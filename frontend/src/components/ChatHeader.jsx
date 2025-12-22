@@ -40,7 +40,7 @@ function ChatHeader({ status }) {
   return (
     <div className="chat-header">
       <div className="chat-title">
-        <h1>Stupid Chat Bot</h1>
+        <h1>Stupid Chat Bot v.0.0.1</h1>
         <p className="chat-subtitle">A simple, straightforward chat</p>
       </div>
       <div className="header-controls">
