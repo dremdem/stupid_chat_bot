@@ -221,11 +221,34 @@ Go to: **Repository → Settings → Secrets and variables → Actions**
 
 #### If reusing existing `github-deploy` user from cv_profile:
 
-You can copy the same SSH key value from cv_profile's secrets:
-1. Go to cv_profile repo → Settings → Secrets → `DROPLET_SSH_KEY`
-2. Copy that value to this repo as `DO_SSH_KEY`
+**Note:** GitHub Secrets are write-only - you cannot view/copy values from another repo's secrets.
 
-Or use the same key file if you still have it locally.
+**Option A:** If you still have the SSH key file locally:
+```bash
+# Check if key exists
+ls -la ~/.ssh/ | grep github-actions
+
+# If found, use it
+cat ~/.ssh/github-actions-deploy  # or your key filename
+# Copy the entire content for DO_SSH_KEY
+```
+
+**Option B:** If you deleted the local key (as recommended), generate a new one:
+```bash
+# Generate new key
+ssh-keygen -t ed25519 -C "github-actions-stupidbot" -f ~/.ssh/github-actions-stupidbot
+
+# Add public key to droplet (append, don't replace!)
+cat ~/.ssh/github-actions-stupidbot.pub | ssh root@YOUR_DROPLET_IP \
+  "cat >> /home/github-deploy/.ssh/authorized_keys"
+
+# Use private key for DO_SSH_KEY secret
+cat ~/.ssh/github-actions-stupidbot
+```
+
+**For DO_HOST and DO_USER:** These aren't secrets - just use the same values:
+- `DO_HOST` = your droplet IP (same as cv_profile)
+- `DO_USER` = `github-deploy`
 
 #### Required Secrets:
 
