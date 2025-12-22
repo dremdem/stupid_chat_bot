@@ -108,9 +108,26 @@ Before setting up automated deployment, ensure you have:
 
 ## Setup Steps
 
-### Step 1: Create Deployment User
+### Step 1: Configure Deployment User
 
-Create a user named `github-deploy` with Docker permissions:
+If you already have a `github-deploy` user from another project (e.g., [cv_profile](https://github.com/dremdem/cv_profile/blob/master/docs/AUTOMATED_DEPLOYMENT.md#step-1-create-deployment-user)), you can **reuse it**. Just grant access to the stupidbot directory:
+
+```bash
+# SSH to droplet as root
+ssh root@YOUR_DROPLET_IP
+
+# Grant existing github-deploy user access to stupidbot directory
+sudo chown -R github-deploy:github-deploy /opt/stupidbot
+
+# Verify docker access still works
+sudo -u github-deploy docker ps
+```
+
+**Skip to [Step 4](#step-4-configure-github-secrets)** if reusing existing user and SSH key.
+
+---
+
+**If you need to create a new user** (first time setup):
 
 ```bash
 # SSH to droplet as root (one-time setup)
@@ -125,11 +142,6 @@ sudo usermod -aG docker github-deploy
 # Create app directory with correct ownership
 sudo mkdir -p /opt/stupidbot
 sudo chown github-deploy:github-deploy /opt/stupidbot
-
-# Copy existing files if they exist
-# (docker-compose.prod.yml, .env)
-sudo cp /opt/stupidbot/* /opt/stupidbot/ 2>/dev/null || true
-sudo chown -R github-deploy:github-deploy /opt/stupidbot
 
 # Verify docker access
 sudo -u github-deploy docker ps
@@ -207,7 +219,15 @@ ssh -i ~/.ssh/github-actions-stupidbot github-deploy@YOUR_DROPLET_IP "docker ps"
 
 Go to: **Repository → Settings → Secrets and variables → Actions**
 
-Add these secrets:
+#### If reusing existing `github-deploy` user from cv_profile:
+
+You can copy the same SSH key value from cv_profile's secrets:
+1. Go to cv_profile repo → Settings → Secrets → `DROPLET_SSH_KEY`
+2. Copy that value to this repo as `DO_SSH_KEY`
+
+Or use the same key file if you still have it locally.
+
+#### Required Secrets:
 
 | Secret | Description | Example |
 |--------|-------------|---------|
@@ -220,7 +240,9 @@ Add these secrets:
 | `GOOGLE_API_KEY` | Google key (optional) | |
 | `DEEPSEEK_API_KEY` | DeepSeek key (optional) | |
 
-**To get SSH private key:**
+**Note:** `DO_HOST` and `DO_USER` will likely be the same as cv_profile's `DROPLET_HOST` and `DROPLET_USER`.
+
+**If you generated a new SSH key:**
 ```bash
 cat ~/.ssh/github-actions-stupidbot
 # Copy ENTIRE content including BEGIN/END lines
