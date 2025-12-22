@@ -281,70 +281,20 @@ shred -u ~/.ssh/github-actions-stupidbot  # Linux
 
 ---
 
-### Step 5: Create Deploy Script
+### Step 5: Deployment Scripts (No Manual Setup Required)
 
-Create `/opt/stupidbot/deploy.sh` on the droplet:
+The deployment scripts are **stored in the repository** and automatically copied to the server during deployment:
 
-```bash
-ssh github-deploy@YOUR_DROPLET_IP "cat > /opt/stupidbot/deploy.sh << 'SCRIPT'
-#!/bin/bash
-set -e
+- [`deploy.sh`](../deploy.sh) - Deployment script with health checks and rollback
+- [`docker-compose.prod.yml`](../docker-compose.prod.yml) - Production compose file
 
-# Configuration
-COMPOSE_FILE=\"/opt/stupidbot/docker-compose.prod.yml\"
-HEALTH_URL=\"http://127.0.0.1:8000/health\"
-MAX_WAIT=60
+**The workflow automatically:**
+1. Copies `docker-compose.prod.yml` to `/opt/stupidbot/`
+2. Copies `deploy.sh` to `/opt/stupidbot/`
+3. Generates `.env` from GitHub Secrets
+4. Runs `deploy.sh`
 
-log() { echo \"[\$(date '+%H:%M:%S')] \$1\"; }
-
-log \"Starting deployment...\"
-
-# Pull latest images
-log \"Pulling images...\"
-docker compose -f \"\$COMPOSE_FILE\" pull
-
-# Store current image IDs for potential rollback
-BACKEND_OLD=\$(docker inspect --format='{{.Image}}' stupidbot-backend 2>/dev/null || echo \"\")
-FRONTEND_OLD=\$(docker inspect --format='{{.Image}}' stupidbot-frontend 2>/dev/null || echo \"\")
-
-# Restart containers
-log \"Restarting containers...\"
-docker compose -f \"\$COMPOSE_FILE\" up -d
-
-# Health check with timeout
-log \"Waiting for health check (max \${MAX_WAIT}s)...\"
-for i in \$(seq 1 \$MAX_WAIT); do
-    if curl -sf \"\$HEALTH_URL\" > /dev/null 2>&1; then
-        log \"Health check passed!\"
-
-        # Cleanup old images
-        docker image prune -f > /dev/null 2>&1 || true
-
-        log \"Deployment successful!\"
-        exit 0
-    fi
-    sleep 1
-    if [ \$((i % 10)) -eq 0 ]; then
-        log \"Still waiting... (\${i}s)\"
-    fi
-done
-
-# Health check failed
-log \"Health check failed after \${MAX_WAIT}s\"
-log \"Container logs:\"
-docker compose -f \"\$COMPOSE_FILE\" logs --tail=30
-
-exit 1
-SCRIPT"
-
-# Make executable
-ssh github-deploy@YOUR_DROPLET_IP "chmod +x /opt/stupidbot/deploy.sh"
-```
-
-**Test the script:**
-```bash
-ssh github-deploy@YOUR_DROPLET_IP "/opt/stupidbot/deploy.sh"
-```
+**No manual script creation needed!** Any changes to these files are automatically deployed.
 
 ---
 
@@ -381,17 +331,20 @@ ssh github-deploy@YOUR_DROPLET_IP "/opt/stupidbot/deploy.sh"
 ### Workflow Execution Flow
 
 ```
-1. Developer triggers workflow (or push to master)
+1. Developer triggers workflow
                 │
                 ▼
-2. Build backend image ──────────────────┐
-   Build frontend image ─────────────────┤
-                                         │
-                ▼                        │
-3. Push images to GHCR ◄─────────────────┘
+2. Build & push images to GHCR
+   - Backend image
+   - Frontend image
                 │
                 ▼
-4. SSH to droplet as github-deploy
+3. SSH to droplet (github-deploy user)
+                │
+                ▼
+4. Copy files from repo to server
+   - docker-compose.prod.yml
+   - deploy.sh
                 │
                 ▼
 5. Generate .env from GitHub Secrets
@@ -401,7 +354,7 @@ ssh github-deploy@YOUR_DROPLET_IP "/opt/stupidbot/deploy.sh"
                 │
                 ▼
 6. Run deploy.sh
-   - Pull images
+   - Pull latest images
    - docker compose up -d
    - Health check (60s timeout)
                 │
@@ -409,9 +362,9 @@ ssh github-deploy@YOUR_DROPLET_IP "/opt/stupidbot/deploy.sh"
         │               │
         ▼               ▼
    ✅ Success      ❌ Failure
-   - Prune old     - Show logs
-     images        - Exit 1
-   - Exit 0        - Workflow fails
+   - Cleanup old   - Show logs
+     images        - Attempt rollback
+   - Exit 0        - Exit 1
 ```
 
 ### Health Check
