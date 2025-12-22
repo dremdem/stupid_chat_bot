@@ -2,7 +2,8 @@
  * Sessions API service for REST endpoints
  */
 
-const API_BASE = 'http://localhost:8000/api/sessions'
+// Use relative URL - works in both dev (Vite proxy) and prod (nginx proxy)
+const API_BASE = '/api/sessions'
 
 /**
  * Fetch all sessions

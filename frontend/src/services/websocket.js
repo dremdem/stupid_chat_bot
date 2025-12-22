@@ -22,7 +22,9 @@ class WebSocketService {
    * @returns {string} WebSocket URL
    */
   buildUrl(sessionId = null) {
-    const baseUrl = 'ws://localhost:8000/ws/chat'
+    // Use relative URL - works in both dev (Vite proxy) and prod (nginx proxy)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const baseUrl = `${protocol}//${window.location.host}/ws/chat`
     if (sessionId) {
       return `${baseUrl}?session_id=${sessionId}`
     }
