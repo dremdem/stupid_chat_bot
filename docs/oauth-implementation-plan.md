@@ -275,10 +275,46 @@ sequenceDiagram
 
 ### Phase 5: Admin Panel
 
-**Goal**: Create admin dashboard for user management.
+**Goal**: Create admin dashboard for user management and provide tools for initial admin bootstrapping.
+
+#### Admin Bootstrap Problem
+
+When the system is first deployed, no admin users exist. This creates a "chicken and egg" problem: you need admin access to create admins, but there are no admins yet.
+
+**Solution**: Provide two mechanisms for creating the initial admin:
+
+```mermaid
+flowchart TD
+    A[Fresh Deployment] --> B{How to create first admin?}
+    B --> C[CLI Command]
+    B --> D[Environment Variable]
+
+    C --> E[Run: invoke make-admin --email user@example.com]
+    E --> F[User promoted to admin]
+
+    D --> G[Set INITIAL_ADMIN_EMAIL in .env]
+    G --> H[User logs in]
+    H --> I{Is user email == INITIAL_ADMIN_EMAIL?}
+    I -->|Yes| J[Auto-promote to admin]
+    I -->|No| K[Normal user flow]
+
+    F --> L[Admin can access /admin]
+    J --> L
+```
 
 #### Tasks
 
+**Admin Bootstrap Tooling**:
+- [ ] Create CLI module (`backend/app/cli.py`)
+- [ ] Implement `make-admin` command
+- [ ] Implement `remove-admin` command
+- [ ] Implement `list-admins` command
+- [ ] Add invoke task wrappers
+- [ ] Implement `INITIAL_ADMIN_EMAIL` environment variable auto-promotion
+- [ ] Add startup check for initial admin promotion
+- [ ] Add logging for admin promotions
+
+**Admin API & Middleware**:
 - [ ] Create admin-only middleware/decorator
 - [ ] Implement admin API endpoints:
   - [ ] `GET /admin/users` - List all users with pagination
@@ -287,6 +323,7 @@ sequenceDiagram
   - [ ] `DELETE /admin/users/:id` - Delete user
   - [ ] `GET /admin/stats` - Usage statistics
 
+**Admin Frontend**:
 - [ ] Create admin frontend:
   - [ ] User list with search/filter
   - [ ] User detail view
@@ -295,13 +332,214 @@ sequenceDiagram
   - [ ] Context window size adjustment
   - [ ] Admin role assignment
 
+**Audit & Security**:
 - [ ] Add audit logging for admin actions
+- [ ] Log all CLI admin operations
+
+#### Admin Bootstrap: CLI Command Design
+
+##### Command Structure
+
+```bash
+# Primary command - promote user to admin
+python -m app.cli make-admin user@example.com
+
+# Or via invoke (recommended)
+cd backend && invoke make-admin --email user@example.com
+
+# Additional commands
+invoke list-admins              # List all admin users
+invoke remove-admin --email user@example.com  # Demote admin to regular user
+```
+
+##### CLI Implementation
+
+```python
+# backend/app/cli.py
+import asyncio
+import click
+from app.database import get_db_session
+from app.models.user import User
+from app.services.admin import AdminService
+
+@click.group()
+def cli():
+    """Stupid Chat Bot admin CLI."""
+    pass
+
+@cli.command()
+@click.argument('email')
+def make_admin(email: str):
+    """Promote a user to admin role."""
+    async def _make_admin():
+        async with get_db_session() as session:
+            service = AdminService(session)
+            user = await service.get_user_by_email(email)
+
+            if not user:
+                click.echo(f"Error: User '{email}' not found.", err=True)
+                click.echo("Note: User must log in at least once before promotion.", err=True)
+                return 1
+
+            if user.role == 'admin':
+                click.echo(f"User '{email}' is already an admin.")
+                return 0
+
+            await service.promote_to_admin(user.id)
+            click.echo(f"Success: User '{email}' promoted to admin.")
+            return 0
+
+    return asyncio.run(_make_admin())
+
+@cli.command()
+def list_admins():
+    """List all admin users."""
+    async def _list_admins():
+        async with get_db_session() as session:
+            service = AdminService(session)
+            admins = await service.get_all_admins()
+
+            if not admins:
+                click.echo("No admin users found.")
+                return
+
+            click.echo("Admin users:")
+            for admin in admins:
+                click.echo(f"  - {admin.email} (id: {admin.id})")
+
+    return asyncio.run(_list_admins())
+
+@cli.command()
+@click.argument('email')
+@click.option('--force', is_flag=True, help='Skip confirmation')
+def remove_admin(email: str, force: bool):
+    """Demote an admin to regular user."""
+    async def _remove_admin():
+        async with get_db_session() as session:
+            service = AdminService(session)
+
+            # Prevent removing last admin
+            admin_count = await service.count_admins()
+            if admin_count <= 1:
+                click.echo("Error: Cannot remove the last admin.", err=True)
+                return 1
+
+            if not force:
+                click.confirm(f"Demote '{email}' from admin?", abort=True)
+
+            await service.demote_from_admin(email)
+            click.echo(f"Success: User '{email}' demoted to regular user.")
+
+    return asyncio.run(_remove_admin())
+
+if __name__ == '__main__':
+    cli()
+```
+
+##### Invoke Task Wrappers
+
+```python
+# backend/tasks.py (add to existing)
+@task
+def make_admin(c, email):
+    """Promote a user to admin role."""
+    c.run(f"python -m app.cli make-admin {email}")
+
+@task
+def list_admins(c):
+    """List all admin users."""
+    c.run("python -m app.cli list-admins")
+
+@task
+def remove_admin(c, email, force=False):
+    """Demote an admin to regular user."""
+    force_flag = "--force" if force else ""
+    c.run(f"python -m app.cli remove-admin {email} {force_flag}")
+```
+
+##### Docker Usage
+
+```bash
+# When running in Docker
+docker compose exec backend python -m app.cli make-admin user@example.com
+
+# Or via invoke
+docker compose exec backend invoke make-admin --email user@example.com
+```
+
+#### Admin Bootstrap: Environment Variable Approach
+
+##### Configuration
+
+```bash
+# .env or docker-compose environment
+INITIAL_ADMIN_EMAIL=admin@example.com
+```
+
+##### Implementation
+
+```python
+# backend/app/services/auth.py (in login/OAuth callback flow)
+from app.config import settings
+
+async def handle_user_login(user: User, session: AsyncSession):
+    """Called after successful authentication."""
+
+    # Check for initial admin promotion
+    if settings.INITIAL_ADMIN_EMAIL and user.email == settings.INITIAL_ADMIN_EMAIL:
+        if user.role != 'admin':
+            user.role = 'admin'
+            await session.commit()
+            logger.info(f"Auto-promoted initial admin: {user.email}")
+
+    # ... rest of login handling
+```
+
+##### Startup Check (Alternative)
+
+```python
+# backend/app/main.py
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await check_initial_admin()
+    yield
+    # Shutdown
+
+async def check_initial_admin():
+    """Check and log initial admin configuration."""
+    if settings.INITIAL_ADMIN_EMAIL:
+        logger.info(f"Initial admin email configured: {settings.INITIAL_ADMIN_EMAIL}")
+        logger.info("This user will be auto-promoted to admin on first login.")
+```
+
+##### Behavior
+
+| Scenario | Result |
+|----------|--------|
+| `INITIAL_ADMIN_EMAIL` not set | No auto-promotion |
+| User with matching email logs in | Promoted to admin, logged |
+| User already admin | No change |
+| `INITIAL_ADMIN_EMAIL` changed | New email will be promoted on login |
+| Multiple logins | Idempotent, only logs first promotion |
+
+##### Security Considerations
+
+- Environment variable is only checked at login time
+- Promotion is logged for audit trail
+- Safe to leave set after initial setup (idempotent)
+- Can be removed from `.env` after initial admin is created
+- Does not create users, only promotes existing ones
 
 #### Deliverables
 
-- `backend/app/routers/admin.py`
-- `backend/app/services/admin.py`
-- `frontend/src/pages/Admin.jsx`
+- `backend/app/cli.py` - CLI commands
+- `backend/app/routers/admin.py` - Admin API endpoints
+- `backend/app/services/admin.py` - Admin business logic
+- Updated `backend/tasks.py` - Invoke wrappers
+- `frontend/src/pages/Admin.jsx` - Admin panel
 - `frontend/src/components/admin/UserList.jsx`
 - `frontend/src/components/admin/UserDetail.jsx`
 
@@ -382,6 +620,13 @@ sequenceDiagram
 - [ ] Frontend forms
 
 #### Phase 5 Tasks
+- [ ] CLI module (`app/cli.py`)
+- [ ] `make-admin` command
+- [ ] `remove-admin` command
+- [ ] `list-admins` command
+- [ ] Invoke task wrappers
+- [ ] `INITIAL_ADMIN_EMAIL` auto-promotion
+- [ ] Startup check for initial admin
 - [ ] Admin middleware
 - [ ] Admin API endpoints
 - [ ] Admin frontend
@@ -405,6 +650,7 @@ sequenceDiagram
 | `authlib` | OAuth 2.0 client |
 | `python-jose[cryptography]` | JWT handling |
 | `passlib[bcrypt]` | Password hashing |
+| `click` | CLI commands |
 | `aiosmtplib` | Async email sending (optional) |
 
 ### Frontend Dependencies
@@ -431,6 +677,10 @@ JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
+# Admin Bootstrap (optional)
+# User with this email will be auto-promoted to admin on first login
+INITIAL_ADMIN_EMAIL=admin@example.com
+
 # Email (optional)
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -448,7 +698,10 @@ SMTP_PASSWORD=xxx
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Created**: 2025-12-23
+**Updated**: 2025-12-23
 **Status**: Planning
 **Issue**: [#56](https://github.com/dremdem/stupid_chat_bot/issues/56)
+**Changelog**:
+- v1.1: Added admin bootstrap tooling (CLI + environment variable) to Phase 5
