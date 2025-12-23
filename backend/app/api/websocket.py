@@ -6,6 +6,7 @@ import uuid
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
+from app.dependencies import USER_ID_COOKIE
 from app.services.ai_service import ai_service
 from app.services.chat_service import chat_service
 
@@ -20,13 +21,14 @@ class ConnectionManager:
     def __init__(self):
         # Map of session_id -> list of connections
         self.session_connections: dict[uuid.UUID, list[WebSocket]] = {}
-        # Map of websocket -> (session_id, conversation_history)
-        self.connection_sessions: dict[WebSocket, tuple[uuid.UUID, list[dict]]] = {}
+        # Map of websocket -> (session_id, user_id, conversation_history)
+        self.connection_sessions: dict[WebSocket, tuple[uuid.UUID, str, list[dict]]] = {}
 
     def register(
         self,
         websocket: WebSocket,
         session_id: uuid.UUID,
+        user_id: str,
         history: list[dict],
     ):
         """Register a WebSocket connection for a session (after accept)."""
@@ -36,17 +38,17 @@ class ConnectionManager:
         self.session_connections[session_id].append(websocket)
 
         # Track session info for this connection
-        self.connection_sessions[websocket] = (session_id, history)
+        self.connection_sessions[websocket] = (session_id, user_id, history)
 
         logger.info(
-            f"New connection for session {session_id}. "
+            f"New connection for session {session_id} (user: {user_id[:8]}...). "
             f"Session connections: {len(self.session_connections[session_id])}"
         )
 
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection."""
         if websocket in self.connection_sessions:
-            session_id, _ = self.connection_sessions[websocket]
+            session_id, user_id, _ = self.connection_sessions[websocket]
 
             # Remove from session connections
             if session_id in self.session_connections:
@@ -82,7 +84,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error sending to client: {e}")
 
-    def get_session_info(self, websocket: WebSocket) -> tuple[uuid.UUID, list[dict]] | None:
+    def get_session_info(self, websocket: WebSocket) -> tuple[uuid.UUID, str, list[dict]] | None:
         """Get session info for a connection."""
         return self.connection_sessions.get(websocket)
 
@@ -91,14 +93,14 @@ class ConnectionManager:
         if websocket not in self.connection_sessions:
             return
 
-        session_id, history = self.connection_sessions[websocket]
+        session_id, user_id, history = self.connection_sessions[websocket]
         history.append(message)
 
         # Keep only last 50 messages for context
         if len(history) > 50:
             history = history[-50:]
 
-        self.connection_sessions[websocket] = (session_id, history)
+        self.connection_sessions[websocket] = (session_id, user_id, history)
 
 
 manager = ConnectionManager()
@@ -115,8 +117,12 @@ async def websocket_endpoint(
     Query Parameters:
         session_id: Optional session UUID. If not provided, uses the default session.
 
+    Cookies:
+        stupidbot_user_id: Required user identifier from cookie.
+
     Handles:
     - Connection establishment
+    - User identification from cookie
     - Session-based history loading
     - Message persistence
     - AI response generation
@@ -128,22 +134,40 @@ async def websocket_endpoint(
     await websocket.accept()
 
     try:
-        # Get session and history
-        if session_id:
-            # Use specified session
-            result = await chat_service.get_session_with_history(session_id)
-            if result is None:
-                # Session not found - fall back to default
-                logger.warning(f"Session {session_id} not found, using default")
-                session_id, history = await chat_service.get_or_create_session()
-            else:
-                session_id, history = result
-        else:
-            # Use default session
-            session_id, history = await chat_service.get_or_create_session()
+        # Get user_id from cookie
+        user_id = websocket.cookies.get(USER_ID_COOKIE)
+
+        if not user_id:
+            # No user identity - close connection with error
+            logger.warning("WebSocket connection attempted without user cookie")
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "content": "No user identity. Please refresh the page.",
+                        "error_code": "NO_USER_ID",
+                    }
+                )
+            )
+            await websocket.close(code=4001, reason="No user identity")
+            return
+
+        # Get session and history for this user
+        actual_session_id, history = await chat_service.get_or_create_session(
+            user_id=user_id,
+            session_id=session_id,
+        )
+
+        # If requested session_id was provided but we got a different one,
+        # it means the session didn't belong to this user
+        if session_id is not None and actual_session_id != session_id:
+            logger.warning(
+                f"Session {session_id} not found or doesn't belong to user, "
+                f"using default session {actual_session_id}"
+            )
 
         # Register connection (websocket already accepted above)
-        manager.register(websocket, session_id, history)
+        manager.register(websocket, actual_session_id, user_id, history)
 
         # Send connection confirmation with session info
         await manager.send_to_client(
@@ -151,7 +175,7 @@ async def websocket_endpoint(
             {
                 "type": "system",
                 "content": "Connected to chat server",
-                "session_id": str(session_id),
+                "session_id": str(actual_session_id),
                 "timestamp": None,
                 "system_type": "connection",
             },
@@ -163,7 +187,7 @@ async def websocket_endpoint(
                 websocket,
                 {
                     "type": "history",
-                    "session_id": str(session_id),
+                    "session_id": str(actual_session_id),
                     "messages": history,
                 },
             )
@@ -181,7 +205,7 @@ async def websocket_endpoint(
                 if session_info is None:
                     continue
 
-                current_session_id, current_history = session_info
+                current_session_id, current_user_id, current_history = session_info
 
                 # Broadcast user message to all connections in this session
                 user_message = {
@@ -213,7 +237,7 @@ async def websocket_endpoint(
 
                 # Get updated history for context
                 session_info = manager.get_session_info(websocket)
-                _, current_history = session_info if session_info else (None, [])
+                _, _, current_history = session_info if session_info else (None, None, [])
 
                 # Generate AI response with streaming
                 ai_response_content = ""

@@ -1,5 +1,9 @@
+/* eslint-env node */
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+// Backend host - 'localhost' for local dev, 'backend' for Docker
+const backendHost = process.env.VITE_BACKEND_HOST || 'localhost'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,11 +12,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: `http://${backendHost}:8000`,
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: `ws://${backendHost}:8000`,
         ws: true,
       },
     },

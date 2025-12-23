@@ -16,8 +16,8 @@ class ChatSession(Base, TimestampMixin):
     """
     Represents a chat conversation session.
 
-    For Phase 5, we use a single global session for all users.
-    This model is designed to support multiple sessions in future phases.
+    Each session belongs to a specific user (identified by user_id cookie).
+    Users can have multiple sessions, each with its own conversation history.
     """
 
     __tablename__ = "chat_sessions"
@@ -28,6 +28,13 @@ class ChatSession(Base, TimestampMixin):
         primary_key=True,
         default=uuid.uuid4,
         nullable=False,
+    )
+
+    # User identification (from cookie)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        nullable=False,
+        index=True,  # Creates index ix_chat_sessions_user_id
     )
 
     # Session metadata

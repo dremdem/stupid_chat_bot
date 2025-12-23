@@ -3,9 +3,10 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
+from app.dependencies import get_or_create_user_id
 from app.services.chat_service import chat_service
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,17 @@ class SessionHistoryResponse(BaseModel):
     count: int
 
 
+# --- Dependency for user identification ---
+
+
+async def get_user_id(
+    request: Request,
+    response: Response,
+) -> str:
+    """Get or create user ID from cookie."""
+    return await get_or_create_user_id(request, response)
+
+
 # --- Endpoints ---
 
 
@@ -70,13 +82,18 @@ class SessionHistoryResponse(BaseModel):
 async def list_sessions(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    user_id: str = Depends(get_user_id),
 ) -> SessionListResponse:
     """
-    List all chat sessions.
+    List all chat sessions for the current user.
 
     Returns sessions ordered by most recent activity (updated_at desc).
     """
-    sessions, total = await chat_service.list_sessions(limit=limit, offset=offset)
+    sessions, total = await chat_service.list_sessions(
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
 
     return SessionListResponse(
         sessions=[SessionResponse(**s) for s in sessions],
@@ -87,25 +104,34 @@ async def list_sessions(
 
 
 @router.post("", response_model=SessionResponse, status_code=201)
-async def create_session(request: CreateSessionRequest) -> SessionResponse:
+async def create_session(
+    request: CreateSessionRequest,
+    user_id: str = Depends(get_user_id),
+) -> SessionResponse:
     """
-    Create a new chat session.
+    Create a new chat session for the current user.
 
     Returns the created session.
     """
-    session = await chat_service.create_new_session(title=request.title)
+    session = await chat_service.create_new_session(
+        user_id=user_id,
+        title=request.title,
+    )
 
     return SessionResponse(**session)
 
 
 @router.get("/{session_id}", response_model=SessionResponse)
-async def get_session(session_id: uuid.UUID) -> SessionResponse:
+async def get_session(
+    session_id: uuid.UUID,
+    user_id: str = Depends(get_user_id),
+) -> SessionResponse:
     """
-    Get a specific session by ID.
+    Get a specific session by ID for the current user.
 
-    Returns 404 if session not found.
+    Returns 404 if session not found or doesn't belong to user.
     """
-    session = await chat_service.get_session(session_id)
+    session = await chat_service.get_session(user_id, session_id)
 
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -117,13 +143,14 @@ async def get_session(session_id: uuid.UUID) -> SessionResponse:
 async def update_session(
     session_id: uuid.UUID,
     request: UpdateSessionRequest,
+    user_id: str = Depends(get_user_id),
 ) -> SessionResponse:
     """
-    Update a session's title.
+    Update a session's title for the current user.
 
-    Returns 404 if session not found.
+    Returns 404 if session not found or doesn't belong to user.
     """
-    session = await chat_service.update_session_title(session_id, request.title)
+    session = await chat_service.update_session_title(user_id, session_id, request.title)
 
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -132,15 +159,18 @@ async def update_session(
 
 
 @router.delete("/{session_id}", status_code=204)
-async def delete_session(session_id: uuid.UUID) -> None:
+async def delete_session(
+    session_id: uuid.UUID,
+    user_id: str = Depends(get_user_id),
+) -> None:
     """
-    Delete a session and all its messages.
+    Delete a session and all its messages for the current user.
 
-    Returns 404 if session not found.
+    Returns 404 if session not found or doesn't belong to user.
     Returns 400 if attempting to delete the default session.
     """
-    # First check if session exists
-    session = await chat_service.get_session(session_id)
+    # First check if session exists and belongs to user
+    session = await chat_service.get_session(user_id, session_id)
 
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -149,7 +179,7 @@ async def delete_session(session_id: uuid.UUID) -> None:
     if session.get("metadata", {}).get("is_default"):
         raise HTTPException(status_code=400, detail="Cannot delete the default session")
 
-    deleted = await chat_service.delete_session(session_id)
+    deleted = await chat_service.delete_session(user_id, session_id)
 
     if not deleted:
         raise HTTPException(status_code=400, detail="Failed to delete session")
@@ -159,13 +189,14 @@ async def delete_session(session_id: uuid.UUID) -> None:
 async def get_session_history(
     session_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=100),
+    user_id: str = Depends(get_user_id),
 ) -> SessionHistoryResponse:
     """
-    Get conversation history for a specific session.
+    Get conversation history for a specific session owned by the current user.
 
     Returns messages ordered from oldest to newest.
     """
-    result = await chat_service.get_session_with_history(session_id)
+    result = await chat_service.get_session_with_history(user_id, session_id)
 
     if result is None:
         raise HTTPException(status_code=404, detail="Session not found")

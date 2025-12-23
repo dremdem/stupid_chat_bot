@@ -26,6 +26,8 @@ services:
     container_name: stupid-chat-bot-frontend
     ports:
       - "5173:5173"
+    environment:
+      - VITE_BACKEND_HOST=backend
     volumes:
       - ./frontend:/app
       - /app/node_modules

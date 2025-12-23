@@ -30,12 +30,12 @@ The most stupid chat bot with AI - a simple, straightforward chat application th
 
 ## Use Cases
 
-This chat bot is designed for casual, collaborative interactions:
+This chat bot is designed for casual interactions:
 
-- **Multi-user chat without authentication** - No login required, just jump in and start chatting
-- **Anonymous or named participation** - Users can choose a display name or stay anonymous
+- **No authentication required** - Anonymous user identification via browser cookies
+- **Isolated user sessions** - Each user has their own chat sessions that persist across visits
 - **AI responds to every message** - The AI assistant participates in every conversation automatically
-- **Persistent history while users are online** - Chat history is maintained as long as at least one user remains connected
+- **Persistent chat history** - Chat history is saved to database and survives browser refresh
 
 ## Tech Stack
 
@@ -367,10 +367,11 @@ For the "most fancy" chat experience, we recommend:
   - Retrieve conversation history
   - Pagination for long chats
 
-- [ ] Backend: Session management
+- [x] Backend: Session management
   - Create/retrieve chat sessions
   - Multi-conversation support
   - Session metadata
+  - User session separation via cookies (anonymous, no auth required)
 
 - [ ] Frontend: History features
   - Load previous messages on mount

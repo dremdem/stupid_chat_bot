@@ -15,11 +15,23 @@ class ChatService:
 
     Handles session management and message storage for the chat application.
     Uses the repository pattern for database operations.
+    All operations are scoped to a specific user via user_id.
     """
 
-    async def get_or_create_session(self) -> tuple[uuid.UUID, list[dict]]:
+    async def get_or_create_session(
+        self,
+        user_id: str,
+        session_id: uuid.UUID | None = None,
+    ) -> tuple[uuid.UUID, list[dict]]:
         """
-        Get or create the default chat session and load history.
+        Get or create a chat session for a user and load history.
+
+        If session_id is provided, validates it belongs to the user.
+        If not provided or invalid, returns the user's default session.
+
+        Args:
+            user_id: The user's unique identifier
+            session_id: Optional specific session to load
 
         Returns:
             Tuple of (session_id, conversation_history)
@@ -28,8 +40,19 @@ class ChatService:
             session_repo = SessionRepository(db)
             message_repo = MessageRepository(db)
 
-            # Get or create default session
-            chat_session = await session_repo.get_or_create_default()
+            chat_session = None
+
+            # Try to get specific session if provided
+            if session_id is not None:
+                chat_session = await session_repo.get_with_messages(
+                    session_id,
+                    user_id=user_id,
+                    message_limit=50,
+                )
+
+            # Fall back to default session if not found or not provided
+            if chat_session is None:
+                chat_session = await session_repo.get_or_create_default(user_id)
 
             # Load recent conversation history
             history = await message_repo.to_conversation_history(chat_session.id, limit=50)
@@ -145,17 +168,19 @@ class ChatService:
 
             return await message_repo.to_conversation_history(session_id, limit)
 
-    # --- Session Management Methods (Phase 5.4) ---
+    # --- Session Management Methods ---
 
     async def list_sessions(
         self,
+        user_id: str,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[dict], int]:
         """
-        List all chat sessions.
+        List all chat sessions for a user.
 
         Args:
+            user_id: The user's unique identifier
             limit: Maximum number of sessions to return
             offset: Number of sessions to skip
 
@@ -165,16 +190,25 @@ class ChatService:
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
 
-            sessions = await session_repo.get_all_ordered(limit=limit, offset=offset)
-            total = await session_repo.count_sessions()
+            sessions = await session_repo.get_all_ordered(
+                user_id=user_id,
+                limit=limit,
+                offset=offset,
+            )
+            total = await session_repo.count_sessions(user_id)
 
             return [s.to_dict() for s in sessions], total
 
-    async def create_new_session(self, title: str = "New Chat") -> dict:
+    async def create_new_session(
+        self,
+        user_id: str,
+        title: str = "New Chat",
+    ) -> dict:
         """
-        Create a new chat session.
+        Create a new chat session for a user.
 
         Args:
+            user_id: The user's unique identifier
             title: Title for the new session
 
         Returns:
@@ -183,27 +217,35 @@ class ChatService:
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
 
-            session = await session_repo.create_new_session(title=title)
+            session = await session_repo.create_new_session(user_id=user_id, title=title)
             await db.commit()
 
-            logger.info(f"Created new session: {session.id} - {title}")
+            logger.info(f"Created new session: {session.id} - {title} for user {user_id}")
 
             return session.to_dict()
 
-    async def get_session(self, session_id: uuid.UUID) -> dict | None:
+    async def get_session(
+        self,
+        user_id: str,
+        session_id: uuid.UUID,
+    ) -> dict | None:
         """
-        Get a specific session by ID.
+        Get a specific session by ID for a user.
 
         Args:
+            user_id: The user's unique identifier
             session_id: The session UUID
 
         Returns:
-            Session as dictionary or None if not found
+            Session as dictionary or None if not found/not owned
         """
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
 
-            session = await session_repo.get_by_id(session_id)
+            session = await session_repo.get_with_messages(
+                session_id,
+                user_id=user_id,
+            )
 
             if session is None:
                 return None
@@ -212,24 +254,25 @@ class ChatService:
 
     async def get_session_with_history(
         self,
+        user_id: str,
         session_id: uuid.UUID,
     ) -> tuple[uuid.UUID, list[dict]] | None:
         """
-        Get a session with its conversation history.
+        Get a session with its conversation history for a user.
 
         Args:
+            user_id: The user's unique identifier
             session_id: The session UUID
 
         Returns:
-            Tuple of (session_id, history) or None if not found
+            Tuple of (session_id, history) or None if not found/not owned
         """
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
             message_repo = MessageRepository(db)
 
-            session = await session_repo.get_by_id(session_id)
-
-            if session is None:
+            # Verify session belongs to user
+            if not await session_repo.belongs_to_user(session_id, user_id):
                 return None
 
             history = await message_repo.to_conversation_history(session_id, limit=50)
@@ -240,21 +283,27 @@ class ChatService:
 
     async def update_session_title(
         self,
+        user_id: str,
         session_id: uuid.UUID,
         title: str,
     ) -> dict | None:
         """
-        Update a session's title.
+        Update a session's title for a user.
 
         Args:
+            user_id: The user's unique identifier
             session_id: The session UUID
             title: New title
 
         Returns:
-            Updated session as dictionary or None if not found
+            Updated session as dictionary or None if not found/not owned
         """
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
+
+            # Verify session belongs to user
+            if not await session_repo.belongs_to_user(session_id, user_id):
+                return None
 
             session = await session_repo.update(session_id, title=title)
             await db.commit()
@@ -266,20 +315,29 @@ class ChatService:
 
             return session.to_dict()
 
-    async def delete_session(self, session_id: uuid.UUID) -> bool:
+    async def delete_session(
+        self,
+        user_id: str,
+        session_id: uuid.UUID,
+    ) -> bool:
         """
-        Delete a session and all its messages.
+        Delete a session and all its messages for a user.
 
         Note: Cannot delete the default session.
 
         Args:
+            user_id: The user's unique identifier
             session_id: The session UUID
 
         Returns:
-            True if deleted, False if not found or is default session
+            True if deleted, False if not found, not owned, or is default session
         """
         async with async_session_maker() as db:
             session_repo = SessionRepository(db)
+
+            # Verify session belongs to user
+            if not await session_repo.belongs_to_user(session_id, user_id):
+                return False
 
             # Check if this is the default session
             if await session_repo.is_default_session(session_id):
@@ -293,6 +351,25 @@ class ChatService:
                 logger.info(f"Deleted session {session_id}")
 
             return deleted
+
+    async def validate_session_ownership(
+        self,
+        user_id: str,
+        session_id: uuid.UUID,
+    ) -> bool:
+        """
+        Validate that a session belongs to a user.
+
+        Args:
+            user_id: The user's unique identifier
+            session_id: The session UUID
+
+        Returns:
+            True if session belongs to user, False otherwise
+        """
+        async with async_session_maker() as db:
+            session_repo = SessionRepository(db)
+            return await session_repo.belongs_to_user(session_id, user_id)
 
 
 # Global chat service instance
