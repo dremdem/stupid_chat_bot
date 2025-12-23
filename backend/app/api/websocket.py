@@ -6,9 +6,11 @@ import uuid
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
+from app.database import async_session_maker
 from app.dependencies import USER_ID_COOKIE
 from app.services.ai_service import ai_service
 from app.services.chat_service import chat_service
+from app.services.message_limits import MessageLimitsService
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +108,22 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+def _get_limit_exceeded_message(user_role: str) -> str:
+    """Get the appropriate limit exceeded message based on user role."""
+    if user_role == "anonymous":
+        return (
+            "You've reached your message limit as an anonymous user. "
+            "Please sign in to continue chatting with more messages!"
+        )
+    elif user_role == "user":
+        return (
+            "You've reached your message limit. "
+            "Please contact us at dremdem.ru for extended access."
+        )
+    else:
+        return "You've reached your message limit."
+
+
 @router.websocket("/ws/chat")
 async def websocket_endpoint(
     websocket: WebSocket,
@@ -166,10 +184,15 @@ async def websocket_endpoint(
                 f"using default session {actual_session_id}"
             )
 
+        # Get initial message limit info
+        async with async_session_maker() as db:
+            limits_service = MessageLimitsService(db)
+            limit_info = await limits_service.get_limit_info(cookie_user_id=user_id)
+
         # Register connection (websocket already accepted above)
         manager.register(websocket, actual_session_id, user_id, history)
 
-        # Send connection confirmation with session info
+        # Send connection confirmation with session info and limit info
         await manager.send_to_client(
             websocket,
             {
@@ -178,6 +201,7 @@ async def websocket_endpoint(
                 "session_id": str(actual_session_id),
                 "timestamp": None,
                 "system_type": "connection",
+                "limit_info": limit_info.to_dict(),
             },
         )
 
@@ -206,6 +230,26 @@ async def websocket_endpoint(
                     continue
 
                 current_session_id, current_user_id, current_history = session_info
+
+                # Check message limits before processing
+                async with async_session_maker() as db:
+                    limits_service = MessageLimitsService(db)
+                    can_send, limit_info = await limits_service.check_can_send(
+                        cookie_user_id=current_user_id
+                    )
+
+                if not can_send:
+                    # Send limit exceeded notification
+                    await manager.send_to_client(
+                        websocket,
+                        {
+                            "type": "limit_exceeded",
+                            "content": _get_limit_exceeded_message(limit_info.user_role),
+                            "limit_info": limit_info.to_dict(),
+                            "login_required": limit_info.user_role == "anonymous",
+                        },
+                    )
+                    continue
 
                 # Broadcast user message to all connections in this session
                 user_message = {
@@ -280,6 +324,21 @@ async def websocket_endpoint(
                     session_id=current_session_id,
                     content=ai_response_content,
                     meta={"provider": ai_service.provider, "model": ai_service.model},
+                )
+
+                # Send updated limit info after message exchange
+                async with async_session_maker() as db:
+                    limits_service = MessageLimitsService(db)
+                    updated_limit_info = await limits_service.get_limit_info(
+                        cookie_user_id=current_user_id
+                    )
+
+                await manager.send_to_client(
+                    websocket,
+                    {
+                        "type": "limit_update",
+                        "limit_info": updated_limit_info.to_dict(),
+                    },
                 )
 
             except json.JSONDecodeError:
