@@ -78,6 +78,14 @@ function App() {
       if (message.type === 'limit_update') {
         if (message.limit_info) {
           setLimitInfo(message.limit_info)
+          // Show modal when limit is exhausted for anonymous users
+          if (!message.limit_info.can_send && message.limit_info.user_role === 'anonymous') {
+            setLimitExceededMessage(
+              "You've reached your message limit as an anonymous user. " +
+                'Please sign in to continue chatting with more messages!'
+            )
+            setShowLoginPrompt(true)
+          }
         }
         return
       }
