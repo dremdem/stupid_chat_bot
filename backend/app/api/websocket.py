@@ -84,9 +84,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error sending to client: {e}")
 
-    def get_session_info(
-        self, websocket: WebSocket
-    ) -> tuple[uuid.UUID, str, list[dict]] | None:
+    def get_session_info(self, websocket: WebSocket) -> tuple[uuid.UUID, str, list[dict]] | None:
         """Get session info for a connection."""
         return self.connection_sessions.get(websocket)
 
@@ -143,11 +141,13 @@ async def websocket_endpoint(
             # No user identity - close connection with error
             logger.warning("WebSocket connection attempted without user cookie")
             await websocket.send_text(
-                json.dumps({
-                    "type": "error",
-                    "content": "No user identity. Please refresh the page.",
-                    "error_code": "NO_USER_ID",
-                })
+                json.dumps(
+                    {
+                        "type": "error",
+                        "content": "No user identity. Please refresh the page.",
+                        "error_code": "NO_USER_ID",
+                    }
+                )
             )
             await websocket.close(code=4001, reason="No user identity")
             return
