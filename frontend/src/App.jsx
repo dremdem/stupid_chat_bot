@@ -16,16 +16,20 @@ function App() {
   const [sessions, setSessions] = useState([])
   const [currentSessionId, setCurrentSessionId] = useState(null)
   const [sessionsLoading, setSessionsLoading] = useState(true)
+  const [userInitialized, setUserInitialized] = useState(false)
   const streamingMessageRef = useRef(null)
   const hasConnectedOnce = useRef(false)
 
-  // Load sessions on mount
+  // Load sessions on mount (also initializes user cookie)
   useEffect(() => {
     const loadSessions = async () => {
       try {
         setSessionsLoading(true)
+        // This fetch request will set the user cookie if not present
         const data = await fetchSessions()
         setSessions(data.sessions)
+        // Mark user as initialized (cookie is now set)
+        setUserInitialized(true)
         // If we have sessions but no current session selected, select the first one
         if (data.sessions.length > 0) {
           // Find default session or use first
@@ -35,6 +39,8 @@ function App() {
       } catch (error) {
         console.error('Failed to load sessions:', error)
         toast.error('Failed to load conversations')
+        // Still mark as initialized so we can show error state
+        setUserInitialized(true)
       } finally {
         setSessionsLoading(false)
       }
@@ -44,7 +50,13 @@ function App() {
   }, [])
 
   // Handle WebSocket connection and messages
+  // Only connect after user is initialized (cookie is set)
   useEffect(() => {
+    // Don't connect until user is initialized (cookie set by sessions API)
+    if (!userInitialized) {
+      return
+    }
+
     // Connect to WebSocket with current session
     websocketService.connect(currentSessionId)
 
@@ -143,7 +155,7 @@ function App() {
       cleanupConnectionHandler()
       websocketService.disconnect()
     }
-  }, [currentSessionId])
+  }, [currentSessionId, userInitialized])
 
   const handleSelectSession = useCallback(
     sessionId => {
