@@ -6,6 +6,7 @@ This directory contains technical documentation for the Stupid Chat Bot project.
 
 - [Quick Links](#quick-links)
 - [Documentation Overview](#documentation-overview)
+- [Features](#features)
 - [Deployment](#deployment)
 - [Architecture & Design](#architecture--design)
 - [Development](#development)
@@ -35,9 +36,15 @@ graph TB
 
     subgraph Docs["docs/"]
         INDEX["README.md<br/>This Index"]
+        FEAT["Features"]
         DEPLOY["Deployment"]
         ARCH["Architecture"]
         DEV["Development"]
+    end
+
+    subgraph Features["Feature Docs"]
+        OAUTH_PLAN["oauth-implementation-plan.md"]
+        OAUTH_TECH["oauth-technical-details.md"]
     end
 
     subgraph Deploy["Deployment Docs"]
@@ -55,15 +62,35 @@ graph TB
     end
 
     README --> INDEX
+    INDEX --> FEAT
     INDEX --> DEPLOY
     INDEX --> ARCH
     INDEX --> DEV
+    FEAT --> OAUTH_PLAN
+    FEAT --> OAUTH_TECH
     DEPLOY --> PLAN
     DEPLOY --> AUTO
     ARCH --> TASK
     DEV --> DOCKER
     DEV --> UV
 ```
+
+---
+
+## Features
+
+Documentation for planned and implemented features.
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [oauth-implementation-plan.md](./oauth-implementation-plan.md) | OAuth 2.0 authentication implementation plan | Planning |
+| [oauth-technical-details.md](./oauth-technical-details.md) | OAuth 2.0 technical details (populated during implementation) | Placeholder |
+
+### Key Topics
+- OAuth 2.0 (Google, GitHub, Facebook)
+- Email/password authentication
+- User tiers and message limits
+- Admin panel
 
 ---
 
