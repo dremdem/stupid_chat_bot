@@ -3,7 +3,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Index, String, Uuid
+from sqlalchemy import JSON, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -21,7 +21,6 @@ class ChatSession(Base, TimestampMixin):
     """
 
     __tablename__ = "chat_sessions"
-    __table_args__ = (Index("ix_chat_sessions_user_id", "user_id"),)
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
@@ -35,7 +34,7 @@ class ChatSession(Base, TimestampMixin):
     user_id: Mapped[str] = mapped_column(
         String(36),
         nullable=False,
-        index=True,
+        index=True,  # Creates index ix_chat_sessions_user_id
     )
 
     # Session metadata
