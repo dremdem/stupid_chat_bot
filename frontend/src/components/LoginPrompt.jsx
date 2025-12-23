@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import PropTypes from 'prop-types'
+import { useAuth } from '../contexts/AuthContext'
 import './LoginPrompt.css'
 
 /**
@@ -6,9 +8,24 @@ import './LoginPrompt.css'
  * Prompts anonymous users to sign in for more messages.
  */
 function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
+  const { providers, isProviderAvailable, loginWithProvider, isLoading: authLoading } = useAuth()
+  const [loginLoading, setLoginLoading] = useState(null)
+
   if (!isOpen) return null
 
   const isAnonymous = limitInfo?.user_role === 'anonymous'
+  const hasAnyProvider = providers.length > 0
+
+  const handleOAuthLogin = async provider => {
+    try {
+      setLoginLoading(provider)
+      await loginWithProvider(provider)
+      // Will redirect to OAuth provider
+    } catch (error) {
+      console.error(`Failed to login with ${provider}:`, error)
+      setLoginLoading(null)
+    }
+  }
 
   return (
     <div className="login-prompt-overlay" onClick={onClose}>
@@ -35,19 +52,33 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
 
         {isAnonymous ? (
           <div className="login-prompt-actions">
-            <p className="login-prompt-coming-soon">OAuth sign-in coming soon!</p>
+            {!hasAnyProvider && !authLoading && (
+              <p className="login-prompt-coming-soon">OAuth sign-in coming soon!</p>
+            )}
             <div className="login-prompt-providers">
-              <button className="login-btn login-btn-google" disabled>
+              <button
+                className="login-btn login-btn-google"
+                disabled={!isProviderAvailable('google') || loginLoading !== null}
+                onClick={() => handleOAuthLogin('google')}
+              >
                 <span className="login-btn-icon">G</span>
-                Sign in with Google
+                {loginLoading === 'google' ? 'Redirecting...' : 'Sign in with Google'}
               </button>
-              <button className="login-btn login-btn-github" disabled>
+              <button
+                className="login-btn login-btn-github"
+                disabled={!isProviderAvailable('github') || loginLoading !== null}
+                onClick={() => handleOAuthLogin('github')}
+              >
                 <span className="login-btn-icon">GH</span>
-                Sign in with GitHub
+                {loginLoading === 'github' ? 'Redirecting...' : 'Sign in with GitHub'}
               </button>
-              <button className="login-btn login-btn-facebook" disabled>
+              <button
+                className="login-btn login-btn-facebook"
+                disabled={!isProviderAvailable('facebook') || loginLoading !== null}
+                onClick={() => handleOAuthLogin('facebook')}
+              >
                 <span className="login-btn-icon">f</span>
-                Sign in with Facebook
+                {loginLoading === 'facebook' ? 'Redirecting...' : 'Sign in with Facebook'}
               </button>
             </div>
             <button className="login-btn login-btn-secondary" onClick={onClose}>

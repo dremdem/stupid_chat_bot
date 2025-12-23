@@ -34,6 +34,26 @@ class Settings(BaseSettings):
     database_path: str = "data/chat.db"  # Relative to project root
     database_echo: bool = False  # Enable SQL logging for debugging
 
+    # OAuth Configuration
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    facebook_client_id: str = ""
+    facebook_client_secret: str = ""
+
+    # JWT Configuration
+    jwt_secret_key: str = "change-me-in-production"  # MUST be changed in production
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+
+    # Admin Bootstrap
+    initial_admin_email: str = ""  # User with this email auto-promoted to admin
+
+    # Frontend URL for OAuth redirects
+    frontend_url: str = "http://localhost:5173"
+
     @property
     def database_url(self) -> str:
         """Get database URL for SQLAlchemy."""

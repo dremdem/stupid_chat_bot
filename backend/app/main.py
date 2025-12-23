@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import history, sessions, websocket
+from app.api import auth, history, sessions, websocket
 from app.config import settings
 from app.database import close_db, init_db
 
@@ -47,6 +47,7 @@ app.add_middleware(
 app.include_router(websocket.router)
 app.include_router(history.router)
 app.include_router(sessions.router)
+app.include_router(auth.router)
 
 
 @app.get("/")
