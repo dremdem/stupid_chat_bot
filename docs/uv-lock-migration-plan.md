@@ -1,5 +1,29 @@
 # Migration to uv Lock Files for Reproducible Builds
 
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Current State Analysis](#current-state-analysis)
+- [Migration Strategy](#migration-strategy)
+  - [Option A: Full uv Project Migration](#option-a-full-uv-project-migration-recommended)
+  - [Option B: Export Lock File](#option-b-export-lock-file-to-requirementstxt)
+  - [Option C: Hybrid Approach](#option-c-hybrid-approach-recommended-for-gradual-migration)
+- [Recommended Implementation](#recommended-implementation-option-c-hybrid)
+  - [Phase 1: Add uv Project Structure](#phase-1-add-uv-project-structure-week-1)
+  - [Phase 2: Update Development Workflow](#phase-2-update-development-workflow-week-1-2)
+  - [Phase 3: CI/CD Integration](#phase-3-cicd-integration-week-2)
+  - [Phase 4: Docker Dev Environment Integration](#phase-4-docker-dev-environment-integration-week-2-3)
+- [Verification & Testing Plan](#verification--testing-plan)
+- [Rollback Plan](#rollback-plan)
+- [Migration Timeline](#migration-timeline)
+- [Benefits After Migration](#benefits-after-migration)
+- [Commands Reference](#commands-reference)
+- [Security Considerations](#security-considerations)
+- [Troubleshooting](#troubleshooting)
+- [References](#references)
+
+---
+
 ## Executive Summary
 
 This document outlines the migration plan for transitioning from `requirements.txt` to `uv`'s modern project management with lock files, addressing the reproducibility gap identified in [PR #17 review comment](https://github.com/dremdem/stupid_chat_bot/pull/17#discussion_r2592772548).

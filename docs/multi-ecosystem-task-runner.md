@@ -1,5 +1,20 @@
 # Multi-Ecosystem Task Runner Architecture
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Design Pattern](#design-pattern-task-runner-per-ecosystem-make-as-glue)
+- [Architecture](#architecture)
+- [Why This Pattern?](#why-this-pattern)
+- [Implementation Details](#implementation-details)
+- [Usage Examples](#usage-examples)
+- [Integration with Existing Workflow](#integration-with-existing-workflow)
+- [Implementation Checklist](#implementation-checklist)
+- [Future Enhancements](#future-enhancements)
+- [References](#references)
+
+---
+
 ## Overview
 
 This document describes the implementation of a unified task runner architecture for the Stupid Chat Bot project, which spans multiple technology ecosystems (Python backend, React frontend).
@@ -17,20 +32,24 @@ This approach respects each ecosystem's conventions while providing a unified in
 
 ## Architecture
 
-```
-Project Root
-│
-├── Makefile                    # Thin orchestration layer
-│   ├── Delegates to → backend/tasks.py (invoke)
-│   └── Delegates to → frontend/package.json (npm scripts)
-│
-├── backend/
-│   ├── tasks.py               # Python invoke tasks (12 tasks)
-│   └── pyproject.toml         # Dependencies
-│
-└── frontend/
-    ├── package.json           # npm scripts
-    └── vitest.config.js       # Test framework config
+```mermaid
+graph TB
+    subgraph Root["Project Root"]
+        Makefile["Makefile<br/>(Thin orchestration layer)"]
+    end
+
+    subgraph Backend["backend/"]
+        TasksPy["tasks.py<br/>(Python invoke tasks)"]
+        PyProjectToml["pyproject.toml<br/>(Dependencies)"]
+    end
+
+    subgraph Frontend["frontend/"]
+        PackageJson["package.json<br/>(npm scripts)"]
+        VitestConfig["vitest.config.js<br/>(Test framework)"]
+    end
+
+    Makefile -->|"Delegates to"| TasksPy
+    Makefile -->|"Delegates to"| PackageJson
 ```
 
 ## Why This Pattern?
