@@ -26,10 +26,7 @@ function fetchOptions(options = {}) {
  * @returns {Promise<{sessions: Array, total: number}>}
  */
 export async function fetchSessions(limit = 50, offset = 0) {
-  const response = await fetch(
-    `${API_BASE}?limit=${limit}&offset=${offset}`,
-    fetchOptions()
-  )
+  const response = await fetch(`${API_BASE}?limit=${limit}&offset=${offset}`, fetchOptions())
   if (!response.ok) {
     throw new Error('Failed to fetch sessions')
   }
@@ -62,10 +59,7 @@ export async function createSession(title = 'New Chat') {
  * @returns {Promise<Object>} Session details
  */
 export async function getSession(sessionId) {
-  const response = await fetch(
-    `${API_BASE}/${sessionId}`,
-    fetchOptions()
-  )
+  const response = await fetch(`${API_BASE}/${sessionId}`, fetchOptions())
   if (!response.ok) {
     throw new Error('Failed to get session')
   }
@@ -118,10 +112,7 @@ export async function deleteSession(sessionId) {
  * @returns {Promise<{messages: Array, count: number}>}
  */
 export async function getSessionHistory(sessionId, limit = 50) {
-  const response = await fetch(
-    `${API_BASE}/${sessionId}/history?limit=${limit}`,
-    fetchOptions()
-  )
+  const response = await fetch(`${API_BASE}/${sessionId}/history?limit=${limit}`, fetchOptions())
   if (!response.ok) {
     throw new Error('Failed to get session history')
   }
