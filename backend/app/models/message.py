@@ -10,6 +10,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.session import ChatSession
+    from app.models.user import User
 
 
 class Message(Base, TimestampMixin):
@@ -37,6 +38,14 @@ class Message(Base, TimestampMixin):
         index=True,
     )
 
+    # Foreign key to authenticated user (nullable for anonymous/legacy messages)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Message content
     sender: Mapped[str] = mapped_column(
         String(20),
@@ -61,6 +70,11 @@ class Message(Base, TimestampMixin):
         back_populates="messages",
     )
 
+    user: Mapped["User | None"] = relationship(
+        "User",
+        foreign_keys=[user_id],
+    )
+
     def __repr__(self) -> str:
         """String representation of the message."""
         preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
@@ -71,6 +85,7 @@ class Message(Base, TimestampMixin):
         return {
             "id": str(self.id),
             "session_id": str(self.session_id),
+            "user_id": str(self.user_id) if self.user_id else None,
             "sender": self.sender,
             "content": self.content,
             "metadata": self.meta,

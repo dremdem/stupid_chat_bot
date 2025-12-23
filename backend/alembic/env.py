@@ -16,6 +16,8 @@ from app.models.base import Base
 # Import models to register them with Base.metadata
 from app.models.message import Message  # noqa: F401
 from app.models.session import ChatSession  # noqa: F401
+from app.models.user import User  # noqa: F401
+from app.models.user_session import UserSession  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

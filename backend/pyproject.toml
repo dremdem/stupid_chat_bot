@@ -15,6 +15,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.23",
     "aiosqlite>=0.19.0",
     "alembic>=1.13.0",
+    # Authentication (Issue #56)
+    "email-validator>=2.0.0",
 ]
 
 [project.optional-dependencies]
