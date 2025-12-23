@@ -5,6 +5,7 @@ import MessageList from './components/MessageList'
 import InputBox from './components/InputBox'
 import TypingIndicator from './components/TypingIndicator'
 import SessionSidebar from './components/SessionSidebar'
+import LoginPrompt from './components/LoginPrompt'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
 import './App.css'
@@ -17,6 +18,9 @@ function App() {
   const [currentSessionId, setCurrentSessionId] = useState(null)
   const [sessionsLoading, setSessionsLoading] = useState(true)
   const [userInitialized, setUserInitialized] = useState(false)
+  const [limitInfo, setLimitInfo] = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [limitExceededMessage, setLimitExceededMessage] = useState('')
   const streamingMessageRef = useRef(null)
   const hasConnectedOnce = useRef(false)
 
@@ -62,8 +66,46 @@ function App() {
 
     // Handle incoming messages
     const cleanupMessageHandler = websocketService.onMessage(message => {
-      // Skip connection system messages
+      // Handle system messages (includes limit_info on connection)
       if (message.type === 'system' && message.system_type === 'connection') {
+        if (message.limit_info) {
+          setLimitInfo(message.limit_info)
+          // Show modal if limit already exhausted on connection (e.g., page reload)
+          if (!message.limit_info.can_send && message.limit_info.user_role === 'anonymous') {
+            setLimitExceededMessage(
+              "You've reached your message limit as an anonymous user. " +
+                'Please sign in to continue chatting with more messages!'
+            )
+            setShowLoginPrompt(true)
+          }
+        }
+        return
+      }
+
+      // Handle limit updates
+      if (message.type === 'limit_update') {
+        if (message.limit_info) {
+          setLimitInfo(message.limit_info)
+          // Show modal when limit is exhausted for anonymous users
+          if (!message.limit_info.can_send && message.limit_info.user_role === 'anonymous') {
+            setLimitExceededMessage(
+              "You've reached your message limit as an anonymous user. " +
+                'Please sign in to continue chatting with more messages!'
+            )
+            setShowLoginPrompt(true)
+          }
+        }
+        return
+      }
+
+      // Handle limit exceeded
+      if (message.type === 'limit_exceeded') {
+        setLimitInfo(message.limit_info)
+        setLimitExceededMessage(message.content)
+        if (message.login_required) {
+          setShowLoginPrompt(true)
+        }
+        toast.error(message.content)
         return
       }
 
@@ -214,6 +256,9 @@ function App() {
     websocketService.sendMessage(message)
   }
 
+  // Check if sending is disabled
+  const isSendDisabled = connectionStatus !== 'connected' || (limitInfo && !limitInfo.can_send)
+
   return (
     <div className="app-container">
       <SessionSidebar
@@ -225,10 +270,22 @@ function App() {
         isLoading={sessionsLoading}
       />
       <div className="app">
-        <ChatHeader status={connectionStatus} />
+        <ChatHeader status={connectionStatus} limitInfo={limitInfo} />
         <MessageList messages={messages} isTyping={isTyping} TypingIndicator={TypingIndicator} />
-        <InputBox onSendMessage={handleSendMessage} disabled={connectionStatus !== 'connected'} />
+        <InputBox
+          onSendMessage={handleSendMessage}
+          disabled={isSendDisabled}
+          limitInfo={limitInfo}
+        />
       </div>
+
+      {/* Login prompt modal */}
+      <LoginPrompt
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        message={limitExceededMessage}
+        limitInfo={limitInfo}
+      />
     </div>
   )
 }

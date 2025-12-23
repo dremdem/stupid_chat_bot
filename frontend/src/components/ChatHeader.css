@@ -91,3 +91,57 @@
 .status-text {
   font-weight: 500;
 }
+
+/* Message limit display */
+.message-limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--bg-secondary, #f0f0f0);
+  transition: all 0.3s ease;
+}
+
+.message-limit.normal {
+  color: var(--text-secondary, #666);
+}
+
+.message-limit.low {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.message-limit.exhausted {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.limit-icon {
+  font-size: 1rem;
+}
+
+.limit-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dark mode support for message limits - uses app's data-theme attribute */
+:root[data-theme='dark'] .message-limit {
+  background: #2a2a2a;
+}
+
+:root[data-theme='dark'] .message-limit.normal {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .message-limit.low {
+  background: #78350f;
+  color: #fcd34d;
+}
+
+:root[data-theme='dark'] .message-limit.exhausted {
+  background: #7f1d1d;
+  color: #fca5a5;
+}

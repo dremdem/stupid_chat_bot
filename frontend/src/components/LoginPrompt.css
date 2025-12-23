@@ -1,0 +1,243 @@
+.login-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.login-prompt-modal {
+  background: var(--bg-primary, #ffffff);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-prompt-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.login-prompt-close:hover {
+  background: var(--bg-secondary, #f0f0f0);
+}
+
+.login-prompt-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.login-prompt-title {
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 12px;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.login-prompt-message {
+  text-align: center;
+  color: var(--text-secondary, #666);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.login-prompt-stats {
+  background: var(--bg-secondary, #f5f5f5);
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-prompt-stat {
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+}
+
+.login-prompt-stat strong {
+  color: var(--text-primary, #1a1a1a);
+}
+
+.login-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-prompt-coming-soon {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  margin: 0 0 8px;
+  font-style: italic;
+}
+
+.login-prompt-contact {
+  text-align: center;
+  color: var(--text-secondary, #666);
+  margin: 0 0 12px;
+}
+
+.login-prompt-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-btn-icon {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.login-btn-google {
+  background: #fff;
+  border-color: #dadce0;
+  color: #3c4043;
+}
+
+.login-btn-google:hover:not(:disabled) {
+  background: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.login-btn-github {
+  background: #24292e;
+  color: #fff;
+}
+
+.login-btn-github:hover:not(:disabled) {
+  background: #2f363d;
+}
+
+.login-btn-facebook {
+  background: #1877f2;
+  color: #fff;
+}
+
+.login-btn-facebook:hover:not(:disabled) {
+  background: #166fe5;
+}
+
+.login-btn-primary {
+  background: var(--accent-color, #4f46e5);
+  color: #fff;
+}
+
+.login-btn-primary:hover {
+  background: var(--accent-hover, #4338ca);
+}
+
+.login-btn-secondary {
+  background: transparent;
+  border-color: var(--border-color, #e0e0e0);
+  color: var(--text-secondary, #666);
+}
+
+.login-btn-secondary:hover {
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+/* Dark mode support - uses app's data-theme attribute */
+:root[data-theme='dark'] .login-prompt-modal {
+  background: #1e1e1e;
+}
+
+:root[data-theme='dark'] .login-prompt-title {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .login-prompt-message {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .login-prompt-stats {
+  background: #2a2a2a;
+}
+
+:root[data-theme='dark'] .login-prompt-stat {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .login-prompt-stat strong {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .login-prompt-close {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .login-prompt-close:hover {
+  background: #333;
+}
+
+:root[data-theme='dark'] .login-btn-google {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .login-btn-google:hover:not(:disabled) {
+  background: #333;
+}
+
+:root[data-theme='dark'] .login-btn-secondary {
+  border-color: #444;
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .login-btn-secondary:hover {
+  background: #2a2a2a;
+}

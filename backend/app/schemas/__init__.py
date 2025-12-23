@@ -1,5 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
+from app.schemas.message_limits import LimitExceededResponse, MessageLimitResponse
 from app.schemas.user import (
     UserBase,
     UserCreate,
@@ -11,6 +12,7 @@ from app.schemas.user import (
 )
 
 __all__ = [
+    # User schemas
     "UserBase",
     "UserCreate",
     "UserInDB",
@@ -18,4 +20,7 @@ __all__ = [
     "UserResponse",
     "UserRole",
     "UserUpdate",
+    # Message limit schemas
+    "MessageLimitResponse",
+    "LimitExceededResponse",
 ]
