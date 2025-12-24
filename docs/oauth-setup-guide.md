@@ -46,8 +46,8 @@ This guide explains how to obtain OAuth credentials for Google, GitHub, and Face
      - `http://localhost:5173` (development)
      - `https://your-domain.com` (production)
    - **Authorized redirect URIs**:
-     - `http://localhost:8000/auth/google/callback` (development)
-     - `https://your-api-domain.com/auth/google/callback` (production)
+     - `http://localhost:8000/api/auth/google/callback` (development)
+     - `https://your-api-domain.com/api/auth/google/callback` (production)
 5. Click **Create**
 6. Copy the **Client ID** and **Client Secret**
 
@@ -69,7 +69,7 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 3. Fill in the form:
    - **Application name**: Stupid Chat Bot
    - **Homepage URL**: `http://localhost:5173` (or your production URL)
-   - **Authorization callback URL**: `http://localhost:8000/auth/github/callback`
+   - **Authorization callback URL**: `http://localhost:8000/api/auth/github/callback`
 4. Click **Register application**
 
 ### Step 2: Get Credentials
@@ -89,7 +89,7 @@ GITHUB_CLIENT_SECRET=your-client-secret
 
 For production, update the callback URL:
 1. Go to your OAuth App settings
-2. Update **Authorization callback URL** to `https://your-api-domain.com/auth/github/callback`
+2. Update **Authorization callback URL** to `https://your-api-domain.com/api/auth/github/callback`
 
 ---
 
@@ -115,8 +115,8 @@ For production, update the callback URL:
 
 1. In the left sidebar, go to **Facebook Login** → **Settings**
 2. Add to **Valid OAuth Redirect URIs**:
-   - `http://localhost:8000/auth/facebook/callback` (development)
-   - `https://your-api-domain.com/auth/facebook/callback` (production)
+   - `http://localhost:8000/api/auth/facebook/callback` (development)
+   - `https://your-api-domain.com/api/auth/facebook/callback` (production)
 3. Click **Save Changes**
 
 ### Step 4: Get Credentials
@@ -241,7 +241,7 @@ You only need to configure the providers you want to use. Unconfigured providers
 ## Troubleshooting
 
 ### "redirect_uri_mismatch" Error
-- Ensure the callback URL in your OAuth app settings exactly matches `http://localhost:8000/auth/{provider}/callback`
+- Ensure the callback URL in your OAuth app settings exactly matches `http://localhost:8000/api/auth/{provider}/callback`
 - Check for trailing slashes - they must match exactly
 
 ### "invalid_client" Error
