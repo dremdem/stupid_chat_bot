@@ -223,6 +223,14 @@ INITIAL_ADMIN_EMAIL=admin@example.com
 
 # URL to redirect after OAuth login
 FRONTEND_URL=http://localhost:5173
+
+# ===========================================
+# Backend URL (for Docker environments)
+# ===========================================
+
+# External URL for OAuth callbacks (required when running in Docker)
+# This ensures OAuth callbacks use localhost instead of Docker internal hostname
+BACKEND_URL=http://localhost:8000
 ```
 
 ### Minimum Required for Each Provider

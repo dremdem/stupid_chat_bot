@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Frontend URL for OAuth redirects
     frontend_url: str = "http://localhost:5173"
 
+    # Backend URL for OAuth callbacks (external URL, not Docker internal)
+    backend_url: str = "http://localhost:8000"
+
     @property
     def database_url(self) -> str:
         """Get database URL for SQLAlchemy."""
