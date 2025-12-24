@@ -54,6 +54,37 @@ async def get_providers():
     return ProvidersResponse(providers=oauth_service.get_configured_providers())
 
 
+@router.get("/me", response_model=UserResponse)
+async def get_current_user(
+    request: Request,
+    access_token: Annotated[str | None, Cookie()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get current authenticated user.
+    """
+    if not access_token:
+        return UserResponse(user=None, authenticated=False)
+
+    user_id = jwt_service.get_user_id_from_token(access_token)
+    if not user_id:
+        return UserResponse(user=None, authenticated=False)
+
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_id(user_id)
+
+    if not user:
+        return UserResponse(user=None, authenticated=False)
+
+    if user.is_blocked:
+        return UserResponse(user=None, authenticated=False)
+
+    return UserResponse(
+        user=user.to_dict(include_sensitive=True),
+        authenticated=True,
+    )
+
+
 @router.get("/{provider}")
 async def oauth_login(
     provider: str,
@@ -269,34 +300,3 @@ async def logout(
     response.delete_cookie("refresh_token", path="/auth")
 
     return {"message": "Logged out successfully"}
-
-
-@router.get("/me", response_model=UserResponse)
-async def get_current_user(
-    request: Request,
-    access_token: Annotated[str | None, Cookie()] = None,
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Get current authenticated user.
-    """
-    if not access_token:
-        return UserResponse(user=None, authenticated=False)
-
-    user_id = jwt_service.get_user_id_from_token(access_token)
-    if not user_id:
-        return UserResponse(user=None, authenticated=False)
-
-    auth_service = AuthService(db)
-    user = await auth_service.get_user_by_id(user_id)
-
-    if not user:
-        return UserResponse(user=None, authenticated=False)
-
-    if user.is_blocked:
-        return UserResponse(user=None, authenticated=False)
-
-    return UserResponse(
-        user=user.to_dict(include_sensitive=True),
-        authenticated=True,
-    )
