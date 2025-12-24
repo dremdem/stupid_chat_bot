@@ -76,7 +76,8 @@ async def oauth_login(
     if redirect_url:
         state = f"{state}:{redirect_url}"
 
-    # Build callback URL using configured backend URL (not request.url_for which uses Docker hostname)
+    # Build callback URL using configured backend URL
+    # (not request.url_for which uses Docker internal hostname)
     callback_url = f"{settings.backend_url}/api/auth/{provider}/callback"
 
     # Get authorization URL
@@ -107,7 +108,8 @@ async def oauth_callback(
     if not oauth_service.is_provider_configured(provider):
         raise HTTPException(status_code=400, detail=f"Provider '{provider}' is not configured")
 
-    # Build callback URL using configured backend URL (must match what was used in authorization request)
+    # Build callback URL using configured backend URL
+    # (must match what was used in authorization request)
     callback_url = f"{settings.backend_url}/api/auth/{provider}/callback"
 
     try:
