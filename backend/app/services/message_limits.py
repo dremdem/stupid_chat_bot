@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Default limits by user tier
 DEFAULT_LIMITS = {
     UserRole.ANONYMOUS.value: 5,
-    UserRole.USER.value: 30,
+    UserRole.USER.value: 50,  # Authenticated users get 50 messages
     UserRole.UNLIMITED.value: None,  # Unlimited
     UserRole.ADMIN.value: None,  # Unlimited
 }

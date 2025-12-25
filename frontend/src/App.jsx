@@ -6,11 +6,13 @@ import InputBox from './components/InputBox'
 import TypingIndicator from './components/TypingIndicator'
 import SessionSidebar from './components/SessionSidebar'
 import LoginPrompt from './components/LoginPrompt'
+import { useAuth } from './contexts/AuthContext'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
 import './App.css'
 
 function App() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [messages, setMessages] = useState([])
   const [connectionStatus, setConnectionStatus] = useState('connecting')
   const [isTyping, setIsTyping] = useState(false)
@@ -23,6 +25,13 @@ function App() {
   const [limitExceededMessage, setLimitExceededMessage] = useState('')
   const streamingMessageRef = useRef(null)
   const hasConnectedOnce = useRef(false)
+
+  // Close login prompt when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      setShowLoginPrompt(false)
+    }
+  }, [isAuthenticated, authLoading])
 
   // Load sessions on mount (also initializes user cookie)
   useEffect(() => {
@@ -71,7 +80,12 @@ function App() {
         if (message.limit_info) {
           setLimitInfo(message.limit_info)
           // Show modal if limit already exhausted on connection (e.g., page reload)
-          if (!message.limit_info.can_send && message.limit_info.user_role === 'anonymous') {
+          // Don't show if user is authenticated (OAuth login completed)
+          if (
+            !message.limit_info.can_send &&
+            message.limit_info.user_role === 'anonymous' &&
+            !isAuthenticated
+          ) {
             setLimitExceededMessage(
               "You've reached your message limit as an anonymous user. " +
                 'Please sign in to continue chatting with more messages!'
@@ -87,7 +101,12 @@ function App() {
         if (message.limit_info) {
           setLimitInfo(message.limit_info)
           // Show modal when limit is exhausted for anonymous users
-          if (!message.limit_info.can_send && message.limit_info.user_role === 'anonymous') {
+          // Don't show if user is authenticated (OAuth login completed)
+          if (
+            !message.limit_info.can_send &&
+            message.limit_info.user_role === 'anonymous' &&
+            !isAuthenticated
+          ) {
             setLimitExceededMessage(
               "You've reached your message limit as an anonymous user. " +
                 'Please sign in to continue chatting with more messages!'
@@ -197,7 +216,7 @@ function App() {
       cleanupConnectionHandler()
       websocketService.disconnect()
     }
-  }, [currentSessionId, userInitialized])
+  }, [currentSessionId, userInitialized, isAuthenticated])
 
   const handleSelectSession = useCallback(
     sessionId => {

@@ -10,9 +10,13 @@ from app.database import async_session_maker
 from app.dependencies import USER_ID_COOKIE
 from app.services.ai_service import ai_service
 from app.services.chat_service import chat_service
+from app.services.jwt_service import jwt_service
 from app.services.message_limits import MessageLimitsService
 
 logger = logging.getLogger(__name__)
+
+# Cookie name for JWT access token
+ACCESS_TOKEN_COOKIE = "access_token"
 
 router = APIRouter()
 
@@ -23,14 +27,17 @@ class ConnectionManager:
     def __init__(self):
         # Map of session_id -> list of connections
         self.session_connections: dict[uuid.UUID, list[WebSocket]] = {}
-        # Map of websocket -> (session_id, user_id, conversation_history)
-        self.connection_sessions: dict[WebSocket, tuple[uuid.UUID, str, list[dict]]] = {}
+        # Map of websocket -> (session_id, cookie_user_id, auth_user_id, conversation_history)
+        self.connection_sessions: dict[
+            WebSocket, tuple[uuid.UUID, str, uuid.UUID | None, list[dict]]
+        ] = {}
 
     def register(
         self,
         websocket: WebSocket,
         session_id: uuid.UUID,
-        user_id: str,
+        cookie_user_id: str,
+        auth_user_id: uuid.UUID | None,
         history: list[dict],
     ):
         """Register a WebSocket connection for a session (after accept)."""
@@ -40,17 +47,20 @@ class ConnectionManager:
         self.session_connections[session_id].append(websocket)
 
         # Track session info for this connection
-        self.connection_sessions[websocket] = (session_id, user_id, history)
+        self.connection_sessions[websocket] = (session_id, cookie_user_id, auth_user_id, history)
 
+        user_display = (
+            f"auth:{str(auth_user_id)[:8]}" if auth_user_id else f"anon:{cookie_user_id[:8]}"
+        )
         logger.info(
-            f"New connection for session {session_id} (user: {user_id[:8]}...). "
+            f"New connection for session {session_id} (user: {user_display}...). "
             f"Session connections: {len(self.session_connections[session_id])}"
         )
 
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection."""
         if websocket in self.connection_sessions:
-            session_id, user_id, _ = self.connection_sessions[websocket]
+            session_id, cookie_user_id, auth_user_id, _ = self.connection_sessions[websocket]
 
             # Remove from session connections
             if session_id in self.session_connections:
@@ -86,7 +96,9 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error sending to client: {e}")
 
-    def get_session_info(self, websocket: WebSocket) -> tuple[uuid.UUID, str, list[dict]] | None:
+    def get_session_info(
+        self, websocket: WebSocket
+    ) -> tuple[uuid.UUID, str, uuid.UUID | None, list[dict]] | None:
         """Get session info for a connection."""
         return self.connection_sessions.get(websocket)
 
@@ -95,14 +107,14 @@ class ConnectionManager:
         if websocket not in self.connection_sessions:
             return
 
-        session_id, user_id, history = self.connection_sessions[websocket]
+        session_id, cookie_user_id, auth_user_id, history = self.connection_sessions[websocket]
         history.append(message)
 
         # Keep only last 50 messages for context
         if len(history) > 50:
             history = history[-50:]
 
-        self.connection_sessions[websocket] = (session_id, user_id, history)
+        self.connection_sessions[websocket] = (session_id, cookie_user_id, auth_user_id, history)
 
 
 manager = ConnectionManager()
@@ -152,10 +164,10 @@ async def websocket_endpoint(
     await websocket.accept()
 
     try:
-        # Get user_id from cookie
-        user_id = websocket.cookies.get(USER_ID_COOKIE)
+        # Get cookie-based user_id (for anonymous users)
+        cookie_user_id = websocket.cookies.get(USER_ID_COOKIE)
 
-        if not user_id:
+        if not cookie_user_id:
             # No user identity - close connection with error
             logger.warning("WebSocket connection attempted without user cookie")
             await websocket.send_text(
@@ -170,9 +182,17 @@ async def websocket_endpoint(
             await websocket.close(code=4001, reason="No user identity")
             return
 
+        # Check for JWT access_token (for authenticated users)
+        auth_user_id = None
+        access_token = websocket.cookies.get(ACCESS_TOKEN_COOKIE)
+        if access_token:
+            auth_user_id = jwt_service.get_user_id_from_token(access_token)
+            if auth_user_id:
+                logger.info(f"Authenticated user connected: {auth_user_id}")
+
         # Get session and history for this user
         actual_session_id, history = await chat_service.get_or_create_session(
-            user_id=user_id,
+            user_id=cookie_user_id,
             session_id=session_id,
         )
 
@@ -184,13 +204,16 @@ async def websocket_endpoint(
                 f"using default session {actual_session_id}"
             )
 
-        # Get initial message limit info
+        # Get initial message limit info (use auth_user_id if authenticated)
         async with async_session_maker() as db:
             limits_service = MessageLimitsService(db)
-            limit_info = await limits_service.get_limit_info(cookie_user_id=user_id)
+            limit_info = await limits_service.get_limit_info(
+                cookie_user_id=cookie_user_id,
+                auth_user_id=auth_user_id,
+            )
 
         # Register connection (websocket already accepted above)
-        manager.register(websocket, actual_session_id, user_id, history)
+        manager.register(websocket, actual_session_id, cookie_user_id, auth_user_id, history)
 
         # Send connection confirmation with session info and limit info
         await manager.send_to_client(
@@ -229,13 +252,19 @@ async def websocket_endpoint(
                 if session_info is None:
                     continue
 
-                current_session_id, current_user_id, current_history = session_info
+                (
+                    current_session_id,
+                    current_cookie_user_id,
+                    current_auth_user_id,
+                    current_history,
+                ) = session_info
 
-                # Check message limits before processing
+                # Check message limits before processing (use auth_user_id if authenticated)
                 async with async_session_maker() as db:
                     limits_service = MessageLimitsService(db)
                     can_send, limit_info = await limits_service.check_can_send(
-                        cookie_user_id=current_user_id
+                        cookie_user_id=current_cookie_user_id,
+                        auth_user_id=current_auth_user_id,
                     )
 
                 if not can_send:
@@ -263,10 +292,11 @@ async def websocket_endpoint(
                 # Add to in-memory history
                 manager.add_to_history(websocket, user_message)
 
-                # Save user message to database
+                # Save user message to database (with auth user_id if authenticated)
                 await chat_service.save_user_message(
                     session_id=current_session_id,
                     content=content,
+                    user_id=current_auth_user_id,
                 )
 
                 # Send typing indicator to session
@@ -281,7 +311,7 @@ async def websocket_endpoint(
 
                 # Get updated history for context
                 session_info = manager.get_session_info(websocket)
-                _, _, current_history = session_info if session_info else (None, None, [])
+                _, _, _, current_history = session_info if session_info else (None, None, None, [])
 
                 # Generate AI response with streaming
                 ai_response_content = ""
@@ -330,7 +360,8 @@ async def websocket_endpoint(
                 async with async_session_maker() as db:
                     limits_service = MessageLimitsService(db)
                     updated_limit_info = await limits_service.get_limit_info(
-                        cookie_user_id=current_user_id
+                        cookie_user_id=current_cookie_user_id,
+                        auth_user_id=current_auth_user_id,
                     )
 
                 await manager.send_to_client(

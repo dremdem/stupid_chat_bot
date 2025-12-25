@@ -15,6 +15,8 @@ from app.models.base import Base
 # Import models to ensure they're registered with Base
 from app.models.message import Message  # noqa: F401
 from app.models.session import ChatSession  # noqa: F401
+from app.models.user import User  # noqa: F401
+from app.models.user_session import UserSession  # noqa: F401
 
 # Create async engine
 engine: AsyncEngine = create_async_engine(
