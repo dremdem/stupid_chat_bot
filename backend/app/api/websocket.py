@@ -49,7 +49,9 @@ class ConnectionManager:
         # Track session info for this connection
         self.connection_sessions[websocket] = (session_id, cookie_user_id, auth_user_id, history)
 
-        user_display = f"auth:{str(auth_user_id)[:8]}" if auth_user_id else f"anon:{cookie_user_id[:8]}"
+        user_display = (
+            f"auth:{str(auth_user_id)[:8]}" if auth_user_id else f"anon:{cookie_user_id[:8]}"
+        )
         logger.info(
             f"New connection for session {session_id} (user: {user_display}...). "
             f"Session connections: {len(self.session_connections[session_id])}"
@@ -250,9 +252,12 @@ async def websocket_endpoint(
                 if session_info is None:
                     continue
 
-                current_session_id, current_cookie_user_id, current_auth_user_id, current_history = (
-                    session_info
-                )
+                (
+                    current_session_id,
+                    current_cookie_user_id,
+                    current_auth_user_id,
+                    current_history,
+                ) = session_info
 
                 # Check message limits before processing (use auth_user_id if authenticated)
                 async with async_session_maker() as db:
