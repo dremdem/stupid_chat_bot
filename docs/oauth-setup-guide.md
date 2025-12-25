@@ -246,6 +246,38 @@ You only need to configure the providers you want to use. Unconfigured providers
 
 ---
 
+## User Roles and Message Limits
+
+After setting up OAuth, users can authenticate and get higher message limits.
+
+### Default Message Limits by Role
+
+| Role | Message Limit | Description |
+|------|---------------|-------------|
+| `anonymous` | 5 messages | Users who haven't logged in |
+| `user` | 50 messages | Authenticated users (default after OAuth login) |
+| `unlimited` | Unlimited | Users manually upgraded by admin |
+| `admin` | Unlimited | Admin users |
+
+### How It Works
+
+1. **Anonymous users**: When someone visits the chat without logging in, they get a `user_id` cookie and can send 5 messages.
+
+2. **After OAuth login**: The user is created in the database with role `user` and gets 50 messages. The WebSocket connection recognizes the JWT token and applies the authenticated user's limits.
+
+3. **Admin override**: Admins can set custom limits per user via the database. If `message_limit` is set on a user record, it overrides the role default.
+
+### Initial Admin Setup
+
+To auto-promote a user to admin on first login, set:
+```bash
+INITIAL_ADMIN_EMAIL=your-email@example.com
+```
+
+When a user with this email logs in via OAuth, they'll automatically be promoted to admin role.
+
+---
+
 ## Troubleshooting
 
 ### "redirect_uri_mismatch" Error
