@@ -15,8 +15,14 @@ RUN uv sync --frozen --no-dev --no-editable
 # Copy application code
 COPY . .
 
+# Make entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
 # Expose port
 EXPOSE 8000
+
+# Use entrypoint script to run migrations before starting the app
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Run directly from virtual environment (avoids uv runtime issues with Docker seccomp)
 CMD [".venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -28,7 +34,8 @@ FROM base AS dev
 # Install all dev dependencies (linters + test tools)
 RUN uv sync --frozen --all-extras --no-editable
 
-# Dev uses uv run for hot-reload (local Docker usually has newer kernel)
+# Entrypoint is inherited from base stage
+# Dev uses hot-reload
 CMD [".venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 
