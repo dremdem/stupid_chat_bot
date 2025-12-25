@@ -15,8 +15,8 @@ RUN uv sync --frozen --no-dev --no-editable
 # Copy application code
 COPY . .
 
-# Make entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
+# Ensure entrypoint has Unix line endings and is executable
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose port
 EXPOSE 8000
