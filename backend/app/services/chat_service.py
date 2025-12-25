@@ -67,6 +67,7 @@ class ChatService:
         self,
         session_id: uuid.UUID,
         content: str,
+        user_id: uuid.UUID | None = None,
     ) -> uuid.UUID:
         """
         Save a user message to the database.
@@ -74,6 +75,7 @@ class ChatService:
         Args:
             session_id: The chat session ID
             content: Message content
+            user_id: Optional authenticated user UUID
 
         Returns:
             The created message ID
@@ -85,6 +87,7 @@ class ChatService:
                 session_id=session_id,
                 sender="user",
                 content=content,
+                user_id=user_id,
             )
 
             await db.commit()

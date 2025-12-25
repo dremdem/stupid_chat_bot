@@ -30,6 +30,7 @@ class MessageRepository(BaseRepository[Message]):
         sender: SenderType,
         content: str,
         meta: dict | None = None,
+        user_id: uuid.UUID | None = None,
     ) -> Message:
         """
         Create a new message in a session.
@@ -39,6 +40,7 @@ class MessageRepository(BaseRepository[Message]):
             sender: Who sent the message ('user' or 'assistant')
             content: Message content text
             meta: Optional metadata (e.g., AI provider info)
+            user_id: Optional authenticated user UUID
 
         Returns:
             Created Message instance
@@ -48,6 +50,7 @@ class MessageRepository(BaseRepository[Message]):
             sender=sender,
             content=content,
             meta=meta or {},
+            user_id=user_id,
         )
 
     async def get_by_session(

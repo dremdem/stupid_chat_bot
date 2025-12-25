@@ -292,10 +292,11 @@ async def websocket_endpoint(
                 # Add to in-memory history
                 manager.add_to_history(websocket, user_message)
 
-                # Save user message to database
+                # Save user message to database (with auth user_id if authenticated)
                 await chat_service.save_user_message(
                     session_id=current_session_id,
                     content=content,
+                    user_id=current_auth_user_id,
                 )
 
                 # Send typing indicator to session
