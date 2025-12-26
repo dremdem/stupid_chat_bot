@@ -351,6 +351,33 @@ flowchart TB
     G -->|Failure| I["✗ Show logs<br/>Attempt rollback<br/>Exit 1"]
 ```
 
+### Database Migrations
+
+Database migrations run **automatically** on every container start via the entrypoint script.
+
+**How it works:**
+1. Container starts
+2. `entrypoint.sh` runs `alembic upgrade head`
+3. If migration fails, container fails to start (visible in logs)
+4. If migration succeeds, application starts normally
+
+**Benefits:**
+- No manual migration step needed
+- Safe to run multiple times (idempotent)
+- Fail-fast: deployment fails if migration fails
+- Works for local dev, CI, and production identically
+
+**If migration fails:**
+```bash
+# Check container logs for migration errors
+docker logs stupidbot-backend
+
+# Manual migration (if needed)
+docker exec stupidbot-backend .venv/bin/python -m alembic upgrade head
+```
+
+---
+
 ### Health Check
 
 The deploy script waits up to 60 seconds for:
@@ -411,6 +438,31 @@ sudo -u github-deploy newgrp docker
    ```bash
    docker exec stupidbot-backend ls -la /app/data/
    ```
+
+---
+
+### Issue: Database Migration Fails
+
+**Error:** `sqlite3.OperationalError: no such column` or similar
+
+**Cause:** Migration didn't run or failed silently.
+
+**Solution:**
+```bash
+# Check migration status
+docker exec stupidbot-backend .venv/bin/python -m alembic current
+
+# View migration history
+docker exec stupidbot-backend .venv/bin/python -m alembic history
+
+# Run migrations manually
+docker exec stupidbot-backend .venv/bin/python -m alembic upgrade head
+
+# If database is corrupted, backup and reset
+docker exec stupidbot-backend cp /app/data/chat.db /app/data/chat.db.backup
+docker exec stupidbot-backend rm /app/data/chat.db
+docker compose restart backend
+```
 
 ---
 

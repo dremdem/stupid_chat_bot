@@ -78,6 +78,10 @@ log "Images pulled successfully"
 log "Deploying new containers..."
 if ! docker compose -f "$COMPOSE_FILE" up -d; then
     log_error "Failed to start new containers"
+    log "Backend container logs (last 50 lines):"
+    docker logs stupidbot-backend --tail 50 2>&1 | tee -a "$LOG_FILE" || true
+    log "Frontend container logs (last 20 lines):"
+    docker logs stupidbot-frontend --tail 20 2>&1 | tee -a "$LOG_FILE" || true
     exit 1
 fi
 
