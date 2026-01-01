@@ -18,6 +18,7 @@ This guide provides step-by-step instructions for setting up automated deploymen
 - [Troubleshooting](#troubleshooting)
 - [Rollback Procedures](#rollback-procedures)
 - [Monitoring](#monitoring)
+- [Database Monitoring](#database-monitoring)
 
 ---
 
@@ -575,6 +576,94 @@ curl https://stupidbot.dremdem.ru/api/sessions
    - Review GitHub Actions logs
    - Monitor deployment success rate
    - Set up uptime monitoring for production URL
+
+---
+
+## Database Monitoring
+
+### View Database Statistics
+
+The `db-stats` CLI command provides essential database metrics without requiring manual SQL queries.
+
+**Local Development:**
+```bash
+# Via make
+make backend-db-stats
+
+# Via invoke
+cd backend && invoke db-stats
+
+# With time filter (last 7 days)
+cd backend && invoke db-stats --days 7
+```
+
+**Production (Docker on DigitalOcean):**
+```bash
+# SSH to server and run stats
+ssh github-deploy@YOUR_DROPLET_IP
+
+# All-time statistics
+docker exec stupidbot-backend .venv/bin/python -m app.cli.stats
+
+# Last 30 days only
+docker exec stupidbot-backend .venv/bin/python -m app.cli.stats --days 30
+```
+
+**Sample Output:**
+```
+============================================================
+              DATABASE STATISTICS
+============================================================
+
+ USER COUNTS
+   Registered users:     12
+   Unique session owners:47
+   Total chat sessions:  59
+
+ USERS BY ROLE
+   user            8
+   anonymous       2
+   unlimited       1
+   admin           1
+
+ TOP 5 ACTIVE USERS (by messages)
+   1. john@example.com                142 msgs
+   2. Anonymous (78e88fc6...)          98 msgs [anon]
+   3. jane@example.com                 67 msgs
+   4. bob@example.com                  45 msgs
+   5. Anonymous (a1b2c3d4...)          32 msgs [anon]
+
+ LAST 5 REGISTERED USERS
+   1. alice@example.com           2024-12-25 14:30
+   2. bob@example.com             2024-12-24 10:15
+   3. charlie@example.com         2024-12-23 09:00
+   4. dave@example.com            2024-12-22 16:45
+   5. eve@example.com             2024-12-21 11:20
+
+ MESSAGE STATISTICS
+   Total messages:       847
+   User messages:        420
+   Assistant messages:   427
+   Messages today:       23
+   Avg per session:      14.4
+
+ SESSION STATISTICS
+   Total sessions:       59
+   Active today:         7
+   Unique owners:        47
+
+============================================================
+```
+
+**Available Metrics:**
+| Category | Metrics |
+|----------|---------|
+| User Counts | Registered users, unique session owners, total sessions |
+| Users by Role | Breakdown by role (anonymous, user, unlimited, admin) |
+| Top Active Users | Most messages sent (registered + anonymous) |
+| Recent Users | Last 5 registrations with date |
+| Message Stats | Total, by sender, today's count, avg per session |
+| Session Stats | Total sessions, active today, unique owners |
 
 ---
 
