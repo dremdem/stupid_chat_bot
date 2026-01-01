@@ -427,3 +427,30 @@ def ci(c):
         print("✅ CI Passed")
         print("=" * 60)
         return True
+
+
+@task(name="db-stats")
+def db_stats(c, days=None):
+    """
+    Display database statistics.
+
+    Shows counts and metrics for users, sessions, and messages.
+    Useful for monitoring database health and user engagement.
+
+    Args:
+        days: Limit statistics to last N days (default: unlimited)
+
+    Usage:
+        invoke db-stats           # All-time statistics
+        invoke db-stats --days 7  # Last 7 days only
+
+    Production:
+        docker exec stupidbot-backend .venv/bin/python -m app.cli.stats
+    """
+    cmd = "python -m app.cli.stats"
+
+    if days:
+        cmd += f" --days {days}"
+
+    print("Fetching database statistics...")
+    c.run(cmd, pty=True)
