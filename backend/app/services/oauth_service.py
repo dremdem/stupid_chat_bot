@@ -113,7 +113,7 @@ class OAuthService:
             return url["url"], url.get("state", state)
         else:
             # GitHub and Facebook use standard OAuth2
-            url = client.create_authorization_url(redirect_uri, state=state)
+            url = await client.create_authorization_url(redirect_uri, state=state)
             return url["url"], url.get("state", state)
 
     async def handle_callback(
