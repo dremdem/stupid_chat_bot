@@ -270,6 +270,17 @@ cat ~/.ssh/github-actions-stupidbot
 | `OPENAI_API_KEY` | OpenAI key (optional) | `sk-...` |
 | `GOOGLE_API_KEY` | Google key (optional) | |
 | `DEEPSEEK_API_KEY` | DeepSeek key (optional) | |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID (optional) | |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (optional) | |
+| `GH_CLIENT_ID` | GitHub OAuth client ID (optional) | |
+| `GH_CLIENT_SECRET` | GitHub OAuth client secret (optional) | |
+| `FACEBOOK_CLIENT_ID` | Facebook OAuth client ID (optional) | |
+| `FACEBOOK_CLIENT_SECRET` | Facebook OAuth client secret (optional) | |
+| `JWT_SECRET_KEY` | JWT signing key | |
+| `BACKEND_URL` | Backend URL for OAuth callbacks | `https://stupidbot.dremdem.ru` |
+| `FRONTEND_URL` | Frontend URL for redirects | `https://stupidbot.dremdem.ru` |
+
+**Note:** GitHub reserves the `GITHUB_` prefix for its own secrets, so we use `GH_CLIENT_ID` and `GH_CLIENT_SECRET` instead.
 
 **Note:** `DO_HOST` and `DO_USER` will likely be the same as cv_profile's `DROPLET_HOST` and `DROPLET_USER`.
 
