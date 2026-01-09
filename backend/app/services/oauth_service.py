@@ -73,11 +73,10 @@ class OAuthService:
 
     def is_provider_configured(self, provider: str) -> bool:
         """Check if a provider is configured."""
-        try:
-            self.oauth.create_client(provider)
-            return True
-        except Exception:
-            return False
+        # Note: create_client() returns None for unregistered providers,
+        # it doesn't raise an exception
+        client = self.oauth.create_client(provider)
+        return client is not None
 
     def get_configured_providers(self) -> list[str]:
         """Get list of configured OAuth providers."""
