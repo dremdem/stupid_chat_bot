@@ -282,6 +282,8 @@ cat ~/.ssh/github-actions-stupidbot
 
 **Note:** GitHub reserves the `GITHUB_` prefix for its own secrets, so we use `GH_CLIENT_ID` and `GH_CLIENT_SECRET` instead.
 
+**Important:** GitHub OAuth Apps only support ONE callback URL. You need **separate OAuth Apps** for development (localhost) and production. The `GH_CLIENT_ID` and `GH_CLIENT_SECRET` secrets should be from your **production** OAuth App. See [OAuth Setup Guide](./oauth-setup-guide.md#github-two-oauth-apps-required) for details.
+
 **Note:** `DO_HOST` and `DO_USER` will likely be the same as cv_profile's `DROPLET_HOST` and `DROPLET_USER`.
 
 **If you generated a new SSH key:**

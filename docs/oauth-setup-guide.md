@@ -2,13 +2,59 @@
 
 This guide explains how to obtain OAuth credentials for Google, GitHub, and Facebook authentication.
 
+> **Authoritative Source:** The complete list of environment variables is maintained in [`backend/.env.example`](../backend/.env.example). This document explains how to obtain the values for those variables.
+
 ## Table of Contents
 
+- [Development vs Production OAuth](#development-vs-production-oauth)
 - [Google OAuth Setup](#google-oauth-setup)
 - [GitHub OAuth Setup](#github-oauth-setup)
 - [Facebook OAuth Setup](#facebook-oauth-setup)
 - [JWT Secret Key](#jwt-secret-key)
 - [Environment Variables Summary](#environment-variables-summary)
+
+---
+
+## Development vs Production OAuth
+
+OAuth providers require **callback URLs** to redirect users after authentication. These URLs must be pre-registered with each provider for security.
+
+### The Challenge
+
+- **Development** uses: `http://localhost:8000/api/auth/{provider}/callback`
+- **Production** uses: `https://your-domain.com/api/auth/{provider}/callback`
+
+### Provider Behavior
+
+| Provider | Multiple Callback URLs | Recommendation |
+|----------|----------------------|----------------|
+| **Google** | Yes - supports multiple URLs in one app | Use single app with both URLs |
+| **GitHub** | **No** - only ONE URL per app | Create separate dev/prod apps |
+| **Facebook** | Yes - supports multiple URLs in one app | Use single app with both URLs |
+
+### GitHub: Two OAuth Apps Required
+
+Because GitHub only allows **one callback URL per OAuth App**, you must create **two separate apps**:
+
+```mermaid
+flowchart LR
+    subgraph Development
+        DevApp["GitHub OAuth App<br/>(Development)"]
+        DevCallback["Callback URL:<br/>http://localhost:8000/api/auth/github/callback"]
+        DevApp --> DevCallback
+    end
+
+    subgraph Production
+        ProdApp["GitHub OAuth App<br/>(Production)"]
+        ProdCallback["Callback URL:<br/>https://your-domain.com/api/auth/github/callback"]
+        ProdApp --> ProdCallback
+    end
+```
+
+| App | Name Suggestion | Callback URL | Used By |
+|-----|-----------------|--------------|---------|
+| Dev | "Stupid Chat Bot (Dev)" | `http://localhost:8000/api/auth/github/callback` | Local `.env` |
+| Prod | "Stupid Chat Bot" | `https://your-domain.com/api/auth/github/callback` | GitHub Actions secrets |
 
 ---
 
@@ -62,45 +108,54 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 
 ## GitHub OAuth Setup
 
-### Step 1: Register a New OAuth App
+> **Important:** GitHub OAuth Apps only support **ONE callback URL**. You need **two separate OAuth Apps** for development and production. See [Development vs Production OAuth](#development-vs-production-oauth) above.
+
+### Step 1: Create Development OAuth App
 
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click **OAuth Apps** → **New OAuth App**
 3. Fill in the form:
-   - **Application name**: Stupid Chat Bot
-   - **Homepage URL**: `http://localhost:5173` (or your production URL)
+   - **Application name**: `Stupid Chat Bot (Dev)`
+   - **Homepage URL**: `http://localhost:5173`
    - **Authorization callback URL**: `http://localhost:8000/api/auth/github/callback`
 4. Click **Register application**
+5. Copy the **Client ID**
+6. Click **Generate a new client secret** and copy it immediately
 
-### Step 2: Get Credentials
+### Step 2: Create Production OAuth App
 
-1. On the app page, you'll see the **Client ID**
-2. Click **Generate a new client secret**
-3. Copy the secret immediately (it won't be shown again)
+1. Click **New OAuth App** again
+2. Fill in the form:
+   - **Application name**: `Stupid Chat Bot`
+   - **Homepage URL**: `https://your-domain.com`
+   - **Authorization callback URL**: `https://your-domain.com/api/auth/github/callback`
+3. Click **Register application**
+4. Copy the **Client ID**
+5. Click **Generate a new client secret** and copy it immediately
 
 ### Step 3: Add to Environment
 
-**Local development** (`.env` file):
+**Local development** (`backend/.env` file) - uses Dev app credentials:
 ```bash
-GITHUB_CLIENT_ID=your-client-id
-GITHUB_CLIENT_SECRET=your-client-secret
+GITHUB_CLIENT_ID=your-dev-client-id
+GITHUB_CLIENT_SECRET=your-dev-client-secret
 ```
 
-**GitHub Actions secrets** (for production deployment):
+**Production** (GitHub Actions secrets) - uses Prod app credentials:
 
-GitHub reserves the `GITHUB_` prefix, so use `GH_` instead:
-```
-GH_CLIENT_ID=your-client-id
-GH_CLIENT_SECRET=your-client-secret
-```
+> **Note:** GitHub reserves the `GITHUB_` prefix for its own use, so we use `GH_` instead. The backend supports both prefixes automatically.
 
-The backend supports both prefixes automatically.
+| GitHub Secret | Value |
+|---------------|-------|
+| `GH_CLIENT_ID` | Your production app's Client ID |
+| `GH_CLIENT_SECRET` | Your production app's Client Secret |
 
-### Production Setup
+### Summary
 
-For production, update the callback URL:
-1. Go to your OAuth App settings
-2. Update **Authorization callback URL** to `https://your-api-domain.com/api/auth/github/callback`
+| Environment | OAuth App | Env Variable Prefix | Where to Configure |
+|-------------|-----------|--------------------|--------------------|
+| Development | Stupid Chat Bot (Dev) | `GITHUB_` | `backend/.env` |
+| Production | Stupid Chat Bot | `GH_` | GitHub Actions Secrets |
 
 ---
 
@@ -311,5 +366,7 @@ When a user with this email logs in via OAuth, they'll automatically be promoted
 
 ## Related Documents
 
-- [OAuth Implementation Plan](./oauth-implementation-plan.md)
-- [Main README](../README.md)
+- [Environment Variables Reference](../backend/.env.example) - Authoritative source for all environment variables
+- [Automated Deployment Guide](./AUTOMATED_DEPLOYMENT.md) - Production deployment with GitHub Actions
+- [OAuth Implementation Plan](./oauth-implementation-plan.md) - Technical implementation details
+- [Main README](../README.md) - Project overview
