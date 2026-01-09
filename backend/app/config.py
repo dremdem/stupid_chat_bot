@@ -1,5 +1,6 @@
 """Application configuration using pydantic-settings."""
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,8 +38,16 @@ class Settings(BaseSettings):
     # OAuth Configuration
     google_client_id: str = ""
     google_client_secret: str = ""
-    github_client_id: str = ""
-    github_client_secret: str = ""
+    # GitHub OAuth: Support both GITHUB_ and GH_ prefixes
+    # (GITHUB_ is reserved in GitHub Actions secrets)
+    github_client_id: str = Field(
+        default="",
+        validation_alias=AliasChoices("github_client_id", "gh_client_id"),
+    )
+    github_client_secret: str = Field(
+        default="",
+        validation_alias=AliasChoices("github_client_secret", "gh_client_secret"),
+    )
     facebook_client_id: str = ""
     facebook_client_secret: str = ""
 

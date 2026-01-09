@@ -80,10 +80,21 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 
 ### Step 3: Add to Environment
 
+**Local development** (`.env` file):
 ```bash
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 ```
+
+**GitHub Actions secrets** (for production deployment):
+
+GitHub reserves the `GITHUB_` prefix, so use `GH_` instead:
+```
+GH_CLIENT_ID=your-client-id
+GH_CLIENT_SECRET=your-client-secret
+```
+
+The backend supports both prefixes automatically.
 
 ### Production Setup
 

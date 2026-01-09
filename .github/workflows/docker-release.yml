@@ -144,6 +144,14 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
 
+          # OAuth (GitHub) - Using GH_ prefix because GITHUB_ is reserved by GitHub Actions
+          GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }}
+
+          # OAuth (Facebook)
+          FACEBOOK_CLIENT_ID=${{ secrets.FACEBOOK_CLIENT_ID }}
+          FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
+
           # JWT
           JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
 
