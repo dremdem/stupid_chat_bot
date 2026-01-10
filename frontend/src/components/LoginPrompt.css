@@ -295,7 +295,9 @@
   font-size: 15px;
   background: var(--bg-primary, #fff);
   color: var(--text-primary, #1a1a1a);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .login-prompt-input:focus {
