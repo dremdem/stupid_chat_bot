@@ -5,7 +5,7 @@ import secrets
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -13,6 +13,7 @@ from app.database import get_db
 from app.services.auth_service import AuthService
 from app.services.jwt_service import jwt_service
 from app.services.oauth_service import oauth_service
+from app.services.password_service import validate_password_strength
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,37 @@ class UserResponse(BaseModel):
 
     user: dict | None
     authenticated: bool
+
+
+class RegisterRequest(BaseModel):
+    """Request for email/password registration."""
+
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    display_name: str | None = Field(default=None, max_length=100)
+
+
+class LoginRequest(BaseModel):
+    """Request for email/password login."""
+
+    email: EmailStr
+    password: str
+
+
+class AuthMethodsResponse(BaseModel):
+    """Response containing available authentication methods."""
+
+    oauth_providers: list[str]
+    email_password_enabled: bool = True
+
+
+@router.get("/methods", response_model=AuthMethodsResponse)
+async def get_auth_methods():
+    """Get all available authentication methods."""
+    return AuthMethodsResponse(
+        oauth_providers=oauth_service.get_configured_providers(),
+        email_password_enabled=True,
+    )
 
 
 @router.get("/providers", response_model=ProvidersResponse)
@@ -82,6 +114,142 @@ async def get_current_user(
     return UserResponse(
         user=user.to_dict(include_sensitive=True),
         authenticated=True,
+    )
+
+
+@router.post("/register", response_model=TokenResponse)
+async def register(
+    request: Request,
+    response: Response,
+    data: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Register a new user with email and password.
+
+    Returns access token and sets cookies on success.
+    """
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(data.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
+    auth_service = AuthService(db)
+
+    # Try to register
+    user = await auth_service.register_with_email(
+        email=data.email,
+        password=data.password,
+        display_name=data.display_name,
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered. Please login or use a different email.",
+        )
+
+    # Handle post-login tasks (admin promotion, etc.)
+    await auth_service.handle_user_login(user)
+
+    # Create auth session
+    user_agent = request.headers.get("User-Agent")
+    client_ip = request.client.host if request.client else None
+    access_token, refresh_token = await auth_service.create_auth_session(
+        user=user,
+        user_agent=user_agent,
+        ip_address=client_ip,
+    )
+
+    # Set cookies
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=COOKIE_MAX_AGE_ACCESS,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=COOKIE_MAX_AGE_REFRESH,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path="/auth",
+    )
+
+    return TokenResponse(
+        access_token=access_token,
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
+        user=user.to_dict(include_sensitive=True),
+    )
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(
+    request: Request,
+    response: Response,
+    data: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Login with email and password.
+
+    Returns access token and sets cookies on success.
+    """
+    auth_service = AuthService(db)
+
+    # Try to authenticate
+    user = await auth_service.authenticate_with_email(
+        email=data.email,
+        password=data.password,
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+        )
+
+    # Handle post-login tasks (admin promotion, etc.)
+    await auth_service.handle_user_login(user)
+
+    # Create auth session
+    user_agent = request.headers.get("User-Agent")
+    client_ip = request.client.host if request.client else None
+    access_token, refresh_token = await auth_service.create_auth_session(
+        user=user,
+        user_agent=user_agent,
+        ip_address=client_ip,
+    )
+
+    # Set cookies
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=COOKIE_MAX_AGE_ACCESS,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=COOKIE_MAX_AGE_REFRESH,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path="/auth",
+    )
+
+    return TokenResponse(
+        access_token=access_token,
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
+        user=user.to_dict(include_sensitive=True),
     )
 
 

@@ -6,10 +6,24 @@ import './LoginPrompt.css'
 /**
  * Modal component shown when user reaches message limit.
  * Prompts anonymous users to sign in for more messages.
+ * Supports OAuth providers and email/password authentication.
  */
 function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
-  const { providers, isProviderAvailable, loginWithProvider, isLoading: authLoading } = useAuth()
+  const {
+    providers,
+    isProviderAvailable,
+    loginWithProvider,
+    loginWithEmail,
+    registerWithEmail,
+    isLoading: authLoading,
+  } = useAuth()
+
   const [loginLoading, setLoginLoading] = useState(null)
+  const [authMode, setAuthMode] = useState('login') // 'login' | 'register'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [error, setError] = useState(null)
 
   if (!isOpen) return null
 
@@ -19,12 +33,47 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
   const handleOAuthLogin = async provider => {
     try {
       setLoginLoading(provider)
+      setError(null)
       await loginWithProvider(provider)
       // Will redirect to OAuth provider
-    } catch (error) {
-      console.error(`Failed to login with ${provider}:`, error)
+    } catch (err) {
+      console.error(`Failed to login with ${provider}:`, err)
+      setError(err.message)
       setLoginLoading(null)
     }
+  }
+
+  const handleEmailSubmit = async e => {
+    e.preventDefault()
+    setError(null)
+
+    try {
+      setLoginLoading('email')
+      if (authMode === 'register') {
+        await registerWithEmail(email, password, displayName || null)
+      } else {
+        await loginWithEmail(email, password)
+      }
+      // Success - close modal
+      onClose()
+    } catch (err) {
+      console.error(`${authMode} failed:`, err)
+      setError(err.message)
+    } finally {
+      setLoginLoading(null)
+    }
+  }
+
+  const toggleAuthMode = () => {
+    setAuthMode(authMode === 'login' ? 'register' : 'login')
+    setError(null)
+  }
+
+  const resetForm = () => {
+    setEmail('')
+    setPassword('')
+    setDisplayName('')
+    setError(null)
   }
 
   return (
@@ -52,35 +101,129 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
 
         {isAnonymous ? (
           <div className="login-prompt-actions">
-            {!hasAnyProvider && !authLoading && (
-              <p className="login-prompt-coming-soon">OAuth sign-in coming soon!</p>
+            {/* OAuth Providers */}
+            {hasAnyProvider && (
+              <>
+                <div className="login-prompt-providers">
+                  <button
+                    className="login-btn login-btn-google"
+                    disabled={!isProviderAvailable('google') || loginLoading !== null}
+                    onClick={() => handleOAuthLogin('google')}
+                  >
+                    <span className="login-btn-icon">G</span>
+                    {loginLoading === 'google' ? 'Redirecting...' : 'Google'}
+                  </button>
+                  <button
+                    className="login-btn login-btn-github"
+                    disabled={!isProviderAvailable('github') || loginLoading !== null}
+                    onClick={() => handleOAuthLogin('github')}
+                  >
+                    <span className="login-btn-icon">GH</span>
+                    {loginLoading === 'github' ? 'Redirecting...' : 'GitHub'}
+                  </button>
+                  <button
+                    className="login-btn login-btn-facebook"
+                    disabled={!isProviderAvailable('facebook') || loginLoading !== null}
+                    onClick={() => handleOAuthLogin('facebook')}
+                  >
+                    <span className="login-btn-icon">f</span>
+                    {loginLoading === 'facebook' ? 'Redirecting...' : 'Facebook'}
+                  </button>
+                </div>
+                <div className="login-prompt-divider">
+                  <span>or</span>
+                </div>
+              </>
             )}
-            <div className="login-prompt-providers">
+
+            {/* Email/Password Form */}
+            <form className="login-prompt-form" onSubmit={handleEmailSubmit}>
+              <h3 className="login-prompt-form-title">
+                {authMode === 'login' ? 'Sign in with Email' : 'Create Account'}
+              </h3>
+
+              {error && <div className="login-prompt-error">{error}</div>}
+
+              {authMode === 'register' && (
+                <input
+                  type="text"
+                  className="login-prompt-input"
+                  placeholder="Display name (optional)"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  disabled={loginLoading !== null}
+                  maxLength={100}
+                />
+              )}
+
+              <input
+                type="email"
+                className="login-prompt-input"
+                placeholder="Email address"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                disabled={loginLoading !== null}
+                required
+              />
+
+              <input
+                type="password"
+                className="login-prompt-input"
+                placeholder={authMode === 'register' ? 'Password (min 8 chars)' : 'Password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                disabled={loginLoading !== null}
+                required
+                minLength={authMode === 'register' ? 8 : undefined}
+              />
+
               <button
-                className="login-btn login-btn-google"
-                disabled={!isProviderAvailable('google') || loginLoading !== null}
-                onClick={() => handleOAuthLogin('google')}
+                type="submit"
+                className="login-btn login-btn-primary"
+                disabled={loginLoading !== null || authLoading}
               >
-                <span className="login-btn-icon">G</span>
-                {loginLoading === 'google' ? 'Redirecting...' : 'Sign in with Google'}
+                {loginLoading === 'email'
+                  ? authMode === 'login'
+                    ? 'Signing in...'
+                    : 'Creating account...'
+                  : authMode === 'login'
+                    ? 'Sign In'
+                    : 'Create Account'}
               </button>
-              <button
-                className="login-btn login-btn-github"
-                disabled={!isProviderAvailable('github') || loginLoading !== null}
-                onClick={() => handleOAuthLogin('github')}
-              >
-                <span className="login-btn-icon">GH</span>
-                {loginLoading === 'github' ? 'Redirecting...' : 'Sign in with GitHub'}
-              </button>
-              <button
-                className="login-btn login-btn-facebook"
-                disabled={!isProviderAvailable('facebook') || loginLoading !== null}
-                onClick={() => handleOAuthLogin('facebook')}
-              >
-                <span className="login-btn-icon">f</span>
-                {loginLoading === 'facebook' ? 'Redirecting...' : 'Sign in with Facebook'}
-              </button>
-            </div>
+
+              <p className="login-prompt-toggle">
+                {authMode === 'login' ? (
+                  <>
+                    Don&apos;t have an account?{' '}
+                    <button
+                      type="button"
+                      className="login-prompt-toggle-btn"
+                      onClick={() => {
+                        toggleAuthMode()
+                        resetForm()
+                      }}
+                    >
+                      Sign up
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      className="login-prompt-toggle-btn"
+                      onClick={() => {
+                        toggleAuthMode()
+                        resetForm()
+                      }}
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </p>
+            </form>
+
             <button className="login-btn login-btn-secondary" onClick={onClose}>
               Maybe Later
             </button>
