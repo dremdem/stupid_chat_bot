@@ -178,7 +178,7 @@ async def register(
         httponly=COOKIE_HTTPONLY,
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
-        path="/auth",
+        path="/api/auth",
     )
 
     return TokenResponse(
@@ -243,7 +243,7 @@ async def login(
         httponly=COOKIE_HTTPONLY,
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
-        path="/auth",
+        path="/api/auth",
     )
 
     return TokenResponse(
@@ -380,7 +380,7 @@ async def oauth_callback(
         httponly=COOKIE_HTTPONLY,
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
-        path="/auth",  # Only sent to auth endpoints
+        path="/api/auth",  # Only sent to auth endpoints
     )
 
     return response
@@ -414,7 +414,7 @@ async def refresh_tokens(
     if not result:
         # Clear invalid cookies
         response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token", path="/auth")
+        response.delete_cookie("refresh_token", path="/api/auth")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     new_access_token, new_refresh_token = result
@@ -440,7 +440,7 @@ async def refresh_tokens(
         httponly=COOKIE_HTTPONLY,
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
-        path="/auth",
+        path="/api/auth",
     )
 
     return TokenResponse(
@@ -465,6 +465,6 @@ async def logout(
 
     # Clear cookies
     response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token", path="/auth")
+    response.delete_cookie("refresh_token", path="/api/auth")
 
     return {"message": "Logged out successfully"}

@@ -2,7 +2,7 @@
 /**
  * Authentication context for managing user authentication state.
  */
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import PropTypes from 'prop-types'
 import {
   getCurrentUser,
@@ -16,12 +16,16 @@ import {
 
 const AuthContext = createContext()
 
+// Refresh tokens 5 minutes before access token expires (25 minutes)
+const TOKEN_REFRESH_INTERVAL = 25 * 60 * 1000
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [providers, setProviders] = useState([])
   const [error, setError] = useState(null)
+  const refreshIntervalRef = useRef(null)
 
   // Check authentication status on mount
   useEffect(() => {
@@ -58,6 +62,42 @@ export function AuthProvider({ children }) {
 
     checkAuth()
   }, [])
+
+  // Set up periodic token refresh when authenticated
+  useEffect(() => {
+    // Clear any existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
+
+    // Only set up refresh interval if authenticated
+    if (isAuthenticated) {
+      refreshIntervalRef.current = setInterval(async () => {
+        try {
+          const result = await refreshTokens()
+          if (result && result.user) {
+            setUser(result.user)
+          } else {
+            // Refresh failed, user needs to re-login
+            setUser(null)
+            setIsAuthenticated(false)
+          }
+        } catch (err) {
+          console.error('Periodic token refresh failed:', err)
+          // Don't logout on network errors, just log and try again next interval
+        }
+      }, TOKEN_REFRESH_INTERVAL)
+    }
+
+    // Cleanup on unmount or when isAuthenticated changes
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+        refreshIntervalRef.current = null
+      }
+    }
+  }, [isAuthenticated])
 
   // Login with OAuth provider
   const loginWithProvider = useCallback(async (provider, redirectUrl = null) => {
