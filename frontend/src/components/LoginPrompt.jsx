@@ -29,6 +29,8 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
 
   const isAnonymous = limitInfo?.user_role === 'anonymous'
   const hasAnyProvider = providers.length > 0
+  // When limit is exceeded, don't allow closing by clicking outside
+  const canDismiss = limitInfo?.can_send !== false
 
   const handleOAuthLogin = async provider => {
     try {
@@ -77,11 +79,13 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
   }
 
   return (
-    <div className="login-prompt-overlay" onClick={onClose}>
+    <div className="login-prompt-overlay" onClick={canDismiss ? onClose : undefined}>
       <div className="login-prompt-modal" onClick={e => e.stopPropagation()}>
-        <button className="login-prompt-close" onClick={onClose} aria-label="Close">
-          &times;
-        </button>
+        {canDismiss && (
+          <button className="login-prompt-close" onClick={onClose} aria-label="Close">
+            &times;
+          </button>
+        )}
 
         <div className="login-prompt-icon">{isAnonymous ? '🔐' : '📨'}</div>
 
@@ -224,9 +228,11 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
               </p>
             </form>
 
-            <button className="login-btn login-btn-secondary" onClick={onClose}>
-              Maybe Later
-            </button>
+            {canDismiss && (
+              <button className="login-btn login-btn-secondary" onClick={onClose}>
+                Maybe Later
+              </button>
+            )}
           </div>
         ) : (
           <div className="login-prompt-actions">
