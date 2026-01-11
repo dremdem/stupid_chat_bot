@@ -96,3 +96,73 @@ export async function getCurrentUser() {
 
   return response.json()
 }
+
+/**
+ * Register a new user with email and password.
+ * @param {string} email - User's email address
+ * @param {string} password - User's password (min 8 chars, must have letter and number)
+ * @param {string} [displayName] - Optional display name
+ * @returns {Promise<{user: object, access_token: string}>}
+ */
+export async function register(email, password, displayName = null) {
+  const body = { email, password }
+  if (displayName) {
+    body.display_name = displayName
+  }
+
+  const response = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.detail || 'Registration failed')
+  }
+
+  return response.json()
+}
+
+/**
+ * Login with email and password.
+ * @param {string} email - User's email address
+ * @param {string} password - User's password
+ * @returns {Promise<{user: object, access_token: string}>}
+ */
+export async function login(email, password) {
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, password }),
+  })
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.detail || 'Login failed')
+  }
+
+  return response.json()
+}
+
+/**
+ * Get all available authentication methods.
+ * @returns {Promise<{oauth_providers: string[], email_password_enabled: boolean}>}
+ */
+export async function getAuthMethods() {
+  const response = await fetch(`${API_BASE}/auth/methods`, {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch auth methods')
+  }
+
+  return response.json()
+}

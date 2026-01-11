@@ -12,6 +12,7 @@ from app.models.user import User, UserRole
 from app.models.user_session import UserSession
 from app.services.jwt_service import jwt_service
 from app.services.oauth_service import OAuthUserInfo
+from app.services.password_service import hash_password, verify_password
 
 logger = logging.getLogger(__name__)
 
@@ -263,3 +264,81 @@ class AuthService:
         stmt = select(User).where(User.email == email)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def register_with_email(
+        self,
+        email: str,
+        password: str,
+        display_name: str | None = None,
+    ) -> User | None:
+        """
+        Register a new user with email and password.
+
+        Args:
+            email: User's email address.
+            password: Plain text password (will be hashed).
+            display_name: Optional display name.
+
+        Returns:
+            The created User or None if email already exists.
+        """
+        # Check if email already exists
+        existing_user = await self.get_user_by_email(email)
+        if existing_user:
+            logger.warning(f"Registration failed: email already exists: {email}")
+            return None
+
+        # Create new user with hashed password
+        user = User(
+            id=uuid.uuid4(),
+            email=email,
+            password_hash=hash_password(password),
+            provider="email",
+            display_name=display_name or email.split("@")[0],
+            role=UserRole.USER.value,
+            is_email_verified=False,  # Email not verified yet
+        )
+
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+
+        logger.info(f"New user registered with email: {email}")
+        return user
+
+    async def authenticate_with_email(
+        self,
+        email: str,
+        password: str,
+    ) -> User | None:
+        """
+        Authenticate user with email and password.
+
+        Args:
+            email: User's email address.
+            password: Plain text password to verify.
+
+        Returns:
+            The User if authentication succeeds, None otherwise.
+        """
+        user = await self.get_user_by_email(email)
+
+        if not user:
+            logger.warning(f"Login failed: user not found: {email}")
+            return None
+
+        if not user.password_hash:
+            # User registered via OAuth, no password set
+            logger.warning(f"Login failed: no password set for user: {email}")
+            return None
+
+        if not verify_password(password, user.password_hash):
+            logger.warning(f"Login failed: invalid password for user: {email}")
+            return None
+
+        if user.is_blocked:
+            logger.warning(f"Login failed: user is blocked: {email}")
+            return None
+
+        logger.info(f"User logged in with email: {email}")
+        return user

@@ -22,14 +22,16 @@ function App() {
   const [userInitialized, setUserInitialized] = useState(false)
   const [limitInfo, setLimitInfo] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [loginPromptDismissed, setLoginPromptDismissed] = useState(false)
   const [limitExceededMessage, setLimitExceededMessage] = useState('')
   const streamingMessageRef = useRef(null)
   const hasConnectedOnce = useRef(false)
 
-  // Close login prompt when user becomes authenticated
+  // Close login prompt and reset dismissed state when user becomes authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       setShowLoginPrompt(false)
+      setLoginPromptDismissed(false)
     }
   }, [isAuthenticated, authLoading])
 
@@ -81,10 +83,12 @@ function App() {
           setLimitInfo(message.limit_info)
           // Show modal if limit already exhausted on connection (e.g., page reload)
           // Don't show if user is authenticated (OAuth login completed)
+          // Don't show if user already dismissed the modal
           if (
             !message.limit_info.can_send &&
             message.limit_info.user_role === 'anonymous' &&
-            !isAuthenticated
+            !isAuthenticated &&
+            !loginPromptDismissed
           ) {
             setLimitExceededMessage(
               "You've reached your message limit as an anonymous user. " +
@@ -102,10 +106,12 @@ function App() {
           setLimitInfo(message.limit_info)
           // Show modal when limit is exhausted for anonymous users
           // Don't show if user is authenticated (OAuth login completed)
+          // Don't show if user already dismissed the modal
           if (
             !message.limit_info.can_send &&
             message.limit_info.user_role === 'anonymous' &&
-            !isAuthenticated
+            !isAuthenticated &&
+            !loginPromptDismissed
           ) {
             setLimitExceededMessage(
               "You've reached your message limit as an anonymous user. " +
@@ -121,7 +127,8 @@ function App() {
       if (message.type === 'limit_exceeded') {
         setLimitInfo(message.limit_info)
         setLimitExceededMessage(message.content)
-        if (message.login_required) {
+        // Only show modal if user hasn't dismissed it
+        if (message.login_required && !loginPromptDismissed) {
           setShowLoginPrompt(true)
         }
         toast.error(message.content)
@@ -216,7 +223,7 @@ function App() {
       cleanupConnectionHandler()
       websocketService.disconnect()
     }
-  }, [currentSessionId, userInitialized, isAuthenticated])
+  }, [currentSessionId, userInitialized, isAuthenticated, loginPromptDismissed])
 
   const handleSelectSession = useCallback(
     sessionId => {
@@ -301,7 +308,10 @@ function App() {
       {/* Login prompt modal */}
       <LoginPrompt
         isOpen={showLoginPrompt}
-        onClose={() => setShowLoginPrompt(false)}
+        onClose={() => {
+          setShowLoginPrompt(false)
+          setLoginPromptDismissed(true)
+        }}
         message={limitExceededMessage}
         limitInfo={limitInfo}
       />

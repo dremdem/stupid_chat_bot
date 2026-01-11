@@ -10,6 +10,8 @@ import {
   initiateOAuthLogin,
   logout as logoutApi,
   refreshTokens,
+  register as registerApi,
+  login as loginApi,
 } from '../services/authApi'
 
 const AuthContext = createContext()
@@ -113,6 +115,48 @@ export function AuthProvider({ children }) {
     [providers]
   )
 
+  // Register with email and password
+  const registerWithEmail = useCallback(async (email, password, displayName = null) => {
+    try {
+      setError(null)
+      setIsLoading(true)
+      const result = await registerApi(email, password, displayName)
+      if (result && result.user) {
+        setUser(result.user)
+        setIsAuthenticated(true)
+        return result
+      }
+      throw new Error('Registration failed')
+    } catch (err) {
+      console.error('Registration failed:', err)
+      setError(err.message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Login with email and password
+  const loginWithEmail = useCallback(async (email, password) => {
+    try {
+      setError(null)
+      setIsLoading(true)
+      const result = await loginApi(email, password)
+      if (result && result.user) {
+        setUser(result.user)
+        setIsAuthenticated(true)
+        return result
+      }
+      throw new Error('Login failed')
+    } catch (err) {
+      console.error('Login failed:', err)
+      setError(err.message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const value = {
     user,
     isAuthenticated,
@@ -120,6 +164,8 @@ export function AuthProvider({ children }) {
     providers,
     error,
     loginWithProvider,
+    loginWithEmail,
+    registerWithEmail,
     logout,
     refresh,
     isProviderAvailable,
