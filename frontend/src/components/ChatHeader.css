@@ -8,6 +8,9 @@
   box-shadow: 0 2px 8px var(--shadow-color);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  /* Create stacking context so dropdown appears above message list */
+  position: relative;
+  z-index: 10;
 }
 
 .chat-title h1 {
