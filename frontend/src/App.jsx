@@ -296,7 +296,14 @@ function App() {
         isLoading={sessionsLoading}
       />
       <div className="app">
-        <ChatHeader status={connectionStatus} limitInfo={limitInfo} />
+        <ChatHeader
+          status={connectionStatus}
+          limitInfo={limitInfo}
+          onSignInClick={() => {
+            setLimitExceededMessage('Sign in to get more messages and save your conversations!')
+            setShowLoginPrompt(true)
+          }}
+        />
         <MessageList messages={messages} isTyping={isTyping} TypingIndicator={TypingIndicator} />
         <InputBox
           onSendMessage={handleSendMessage}

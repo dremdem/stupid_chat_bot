@@ -1,12 +1,46 @@
+import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
 import './ChatHeader.css'
 
 /**
  * ChatHeader component - displays the chat title, connection status, and message limits
  */
-function ChatHeader({ status, limitInfo }) {
+function ChatHeader({ status, limitInfo, onSignInClick }) {
   const { theme, toggleTheme } = useTheme()
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef(null)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = event => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = async () => {
+    setShowUserMenu(false)
+    await logout()
+  }
+
+  // Get user display info
+  const getUserDisplay = () => {
+    if (!user) return null
+    return user.display_name || user.email || 'User'
+  }
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    const display = getUserDisplay()
+    if (!display) return '?'
+    return display.charAt(0).toUpperCase()
+  }
 
   const getStatusColor = () => {
     switch (status) {
@@ -74,6 +108,42 @@ function ChatHeader({ status, limitInfo }) {
           <span className={`status-indicator ${getStatusColor()}`}></span>
           <span className="status-text">{getStatusText()}</span>
         </div>
+
+        {/* User menu / Sign in */}
+        {!authLoading && (
+          <div className="user-menu-container" ref={userMenuRef}>
+            {isAuthenticated ? (
+              <>
+                <button
+                  className="user-avatar-btn"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  title={getUserDisplay()}
+                >
+                  <span className="user-avatar">{getUserInitials()}</span>
+                </button>
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <div className="user-dropdown-header">
+                      <span className="user-dropdown-email">{user?.email}</span>
+                      {user?.display_name && (
+                        <span className="user-dropdown-name">{user.display_name}</span>
+                      )}
+                    </div>
+                    <div className="user-dropdown-divider" />
+                    <button className="user-dropdown-item logout-btn" onClick={handleLogout}>
+                      <span className="dropdown-icon">🚪</span>
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button className="sign-in-btn" onClick={onSignInClick}>
+                Sign in
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -89,6 +159,7 @@ ChatHeader.propTypes = {
     can_send: PropTypes.bool,
     user_role: PropTypes.string,
   }),
+  onSignInClick: PropTypes.func,
 }
 
 export default ChatHeader
