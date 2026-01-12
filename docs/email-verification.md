@@ -216,7 +216,7 @@ Verify a user's email address using the token from the email link.
 **Request:**
 ```json
 {
-  "token": "abc123def456..."
+  "token": "<verification-token-from-email>"
 }
 ```
 
