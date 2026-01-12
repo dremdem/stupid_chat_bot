@@ -22,6 +22,7 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
   const [authMode, setAuthMode] = useState('login') // 'login' | 'register'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState(null)
 
@@ -170,16 +171,27 @@ function LoginPrompt({ isOpen, onClose, message, limitInfo }) {
                 required
               />
 
-              <input
-                type="password"
-                className="login-prompt-input"
-                placeholder={authMode === 'register' ? 'Password (min 8 chars)' : 'Password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                disabled={loginLoading !== null}
-                required
-                minLength={authMode === 'register' ? 8 : undefined}
-              />
+              <div className="login-prompt-password-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="login-prompt-input login-prompt-password-input"
+                  placeholder={authMode === 'register' ? 'Password (min 8 chars)' : 'Password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  disabled={loginLoading !== null}
+                  required
+                  minLength={authMode === 'register' ? 8 : undefined}
+                />
+                <button
+                  type="button"
+                  className="login-prompt-password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
 
               <button
                 type="submit"

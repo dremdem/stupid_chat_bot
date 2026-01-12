@@ -330,6 +330,35 @@
   color: #888;
 }
 
+/* Password field with toggle */
+.login-prompt-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-prompt-password-input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.login-prompt-password-toggle {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.login-prompt-password-toggle:hover {
+  opacity: 1;
+}
+
 /* Toggle between login/register */
 .login-prompt-toggle {
   text-align: center;

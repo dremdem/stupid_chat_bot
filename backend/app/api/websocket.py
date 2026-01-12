@@ -120,9 +120,14 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-def _get_limit_exceeded_message(user_role: str) -> str:
+def _get_limit_exceeded_message(user_role: str, requires_verification: bool = False) -> str:
     """Get the appropriate limit exceeded message based on user role."""
-    if user_role == "anonymous":
+    if requires_verification:
+        return (
+            "Please verify your email address to start chatting. "
+            "Check your inbox for the verification link!"
+        )
+    elif user_role == "anonymous":
         return (
             "You've reached your message limit as an anonymous user. "
             "Please sign in to continue chatting with more messages!"
@@ -273,9 +278,12 @@ async def websocket_endpoint(
                         websocket,
                         {
                             "type": "limit_exceeded",
-                            "content": _get_limit_exceeded_message(limit_info.user_role),
+                            "content": _get_limit_exceeded_message(
+                                limit_info.user_role, limit_info.requires_verification
+                            ),
                             "limit_info": limit_info.to_dict(),
                             "login_required": limit_info.user_role == "anonymous",
+                            "verification_required": limit_info.requires_verification,
                         },
                     )
                     continue

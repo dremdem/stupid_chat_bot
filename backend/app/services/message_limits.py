@@ -31,6 +31,7 @@ class MessageLimitInfo:
     is_unlimited: bool
     can_send: bool
     user_role: str
+    requires_verification: bool = False  # True if email verification needed
 
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
@@ -41,6 +42,7 @@ class MessageLimitInfo:
             "is_unlimited": self.is_unlimited,
             "can_send": self.can_send,
             "user_role": self.user_role,
+            "requires_verification": self.requires_verification,
         }
 
 
@@ -96,7 +98,7 @@ class MessageLimitsService:
     async def get_user_limit(
         self,
         auth_user_id: UUID | None = None,
-    ) -> tuple[int | None, str]:
+    ) -> tuple[int | None, str, bool]:
         """
         Get the message limit for a user.
 
@@ -104,7 +106,7 @@ class MessageLimitsService:
             auth_user_id: Authenticated user UUID (None for anonymous)
 
         Returns:
-            Tuple of (limit, role) where limit is None for unlimited
+            Tuple of (limit, role, requires_verification) where limit is None for unlimited
         """
         if auth_user_id:
             # Get authenticated user's limit
@@ -114,16 +116,20 @@ class MessageLimitsService:
 
             if user:
                 if user.is_blocked:
-                    return 0, user.role  # Blocked users can't send
+                    return 0, user.role, False  # Blocked users can't send
+
+                # Check if email user needs verification
+                if user.provider == "email" and not user.is_email_verified:
+                    return 0, user.role, True  # Unverified email users can't send
 
                 # Use custom limit if set, otherwise default for role
                 if user.message_limit is not None:
-                    return user.message_limit, user.role
+                    return user.message_limit, user.role, False
 
-                return DEFAULT_LIMITS.get(user.role), user.role
+                return DEFAULT_LIMITS.get(user.role), user.role, False
 
         # Anonymous user
-        return DEFAULT_LIMITS[UserRole.ANONYMOUS.value], UserRole.ANONYMOUS.value
+        return DEFAULT_LIMITS[UserRole.ANONYMOUS.value], UserRole.ANONYMOUS.value, False
 
     async def get_limit_info(
         self,
@@ -140,8 +146,8 @@ class MessageLimitsService:
         Returns:
             MessageLimitInfo with all limit details
         """
-        # Get limit and role
-        limit, role = await self.get_user_limit(auth_user_id)
+        # Get limit, role, and verification status
+        limit, role, requires_verification = await self.get_user_limit(auth_user_id)
 
         # Count used messages
         used = await self.count_user_messages(
@@ -158,6 +164,10 @@ class MessageLimitsService:
             remaining = max(0, limit - used)
             can_send = remaining > 0
 
+        # If verification required, can't send regardless of limit
+        if requires_verification:
+            can_send = False
+
         return MessageLimitInfo(
             limit=limit,
             used=used,
@@ -165,6 +175,7 @@ class MessageLimitsService:
             is_unlimited=is_unlimited,
             can_send=can_send,
             user_role=role,
+            requires_verification=requires_verification,
         )
 
     async def check_can_send(

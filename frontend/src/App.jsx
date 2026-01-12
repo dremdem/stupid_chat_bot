@@ -93,10 +93,18 @@ function App() {
       if (message.type === 'system' && message.system_type === 'connection') {
         if (message.limit_info) {
           setLimitInfo(message.limit_info)
+          // Show verification reminder if email not verified
+          if (message.limit_info.requires_verification) {
+            toast.error(
+              'Please verify your email to start chatting. Check your inbox!',
+              { duration: 5000 }
+            )
+          }
           // Show modal if limit already exhausted on connection (e.g., page reload)
           // Don't show if user is authenticated (OAuth login completed)
           // Don't show if user already dismissed the modal
-          if (
+          // Don't show for verification-required users (they're logged in, just need to verify)
+          else if (
             !message.limit_info.can_send &&
             message.limit_info.user_role === 'anonymous' &&
             !isAuthenticated &&
