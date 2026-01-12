@@ -66,6 +66,19 @@ class Settings(BaseSettings):
     # Backend URL for OAuth callbacks (external URL, not Docker internal)
     backend_url: str = "http://localhost:8000"
 
+    # Email Configuration (SMTP)
+    smtp_host: str = ""  # Empty = console logging (dev mode)
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@stupidbot.local"
+    smtp_from_name: str = "Stupid Chat Bot"
+    smtp_use_tls: bool = True
+
+    # Email Verification
+    email_verification_token_expire_hours: int = 24
+    email_verification_resend_cooldown_seconds: int = 60
+
     @property
     def database_url(self) -> str:
         """Get database URL for SQLAlchemy."""
@@ -75,6 +88,11 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
+
+    @property
+    def is_email_configured(self) -> bool:
+        """Check if SMTP is configured for sending emails."""
+        return bool(self.smtp_host and self.smtp_user and self.smtp_password)
 
     @property
     def selected_model(self) -> str:

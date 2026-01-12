@@ -6,13 +6,25 @@ import InputBox from './components/InputBox'
 import TypingIndicator from './components/TypingIndicator'
 import SessionSidebar from './components/SessionSidebar'
 import LoginPrompt from './components/LoginPrompt'
+import VerifyEmail from './components/VerifyEmail'
 import { useAuth } from './contexts/AuthContext'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
 import './App.css'
 
+// Check if we're on the verify-email page
+function getVerificationToken() {
+  const path = window.location.pathname
+  if (path === '/verify-email') {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('token')
+  }
+  return null
+}
+
 function App() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const [verificationToken, setVerificationToken] = useState(getVerificationToken)
   const [messages, setMessages] = useState([])
   const [connectionStatus, setConnectionStatus] = useState('connecting')
   const [isTyping, setIsTyping] = useState(false)
@@ -284,6 +296,11 @@ function App() {
 
   // Check if sending is disabled
   const isSendDisabled = connectionStatus !== 'connected' || (limitInfo && !limitInfo.can_send)
+
+  // Handle email verification page
+  if (verificationToken !== null) {
+    return <VerifyEmail token={verificationToken} onComplete={() => setVerificationToken(null)} />
+  }
 
   return (
     <div className="app-container">

@@ -1,6 +1,7 @@
 """Database models for the chat application."""
 
 from app.models.base import Base, TimestampMixin
+from app.models.email_verification import EmailVerificationToken
 from app.models.message import Message
 from app.models.session import ChatSession
 from app.models.user import AuthProvider, User, UserRole
@@ -10,6 +11,7 @@ __all__ = [
     "Base",
     "TimestampMixin",
     "ChatSession",
+    "EmailVerificationToken",
     "Message",
     "User",
     "UserRole",

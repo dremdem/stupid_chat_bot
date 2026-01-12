@@ -1,0 +1,128 @@
+.verify-email-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--body-bg, #0f0f1a);
+  padding: 20px;
+}
+
+.verify-email-card {
+  background: var(--bg-primary, #fff);
+  border-radius: 16px;
+  padding: 48px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.verify-email-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 40px;
+}
+
+.verify-email-icon.loading {
+  background: var(--bg-secondary, #f0f0f0);
+}
+
+.verify-email-icon.success {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.verify-email-icon.error {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--bg-secondary, #e0e0e0);
+  border-top-color: var(--accent-color, #4f46e5);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.verify-email-card h1 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.verify-email-card p {
+  margin: 0 0 24px;
+  color: var(--text-secondary, #666);
+  line-height: 1.5;
+}
+
+.verify-email-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--accent-color, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.verify-email-btn:hover {
+  background: var(--accent-hover, #4338ca);
+}
+
+.verify-email-btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+  color: var(--text-primary, #1a1a1a);
+}
+
+.verify-email-btn.secondary:hover {
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+/* Dark mode */
+:root[data-theme='dark'] .verify-email-card {
+  background: #1e1e1e;
+}
+
+:root[data-theme='dark'] .verify-email-card h1 {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .verify-email-card p {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .verify-email-icon.loading {
+  background: #2a2a2a;
+}
+
+:root[data-theme='dark'] .spinner {
+  border-color: #333;
+  border-top-color: var(--accent-color, #4f46e5);
+}
+
+:root[data-theme='dark'] .verify-email-btn.secondary {
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .verify-email-btn.secondary:hover {
+  background: #2a2a2a;
+}
