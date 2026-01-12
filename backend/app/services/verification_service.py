@@ -93,8 +93,9 @@ class VerificationService:
             logger.warning("Verification token not found or already used")
             return None
 
-        # Check expiration
-        if datetime.now(timezone.utc) > token.expires_at:
+        # Check expiration (add timezone for SQLite compatibility)
+        expires_at = token.expires_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
             logger.warning(f"Verification token expired for user {token.user_id}")
             return None
 
