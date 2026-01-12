@@ -114,6 +114,11 @@ class VerificationService:
         user.is_email_verified = True
 
         await self.db.commit()
+
+        # Refresh user to reload attributes after commit
+        # This prevents MissingGreenlet error when accessing expired attributes
+        await self.db.refresh(user)
+
         logger.info(f"Email verified for user {user.id}")
 
         return user
