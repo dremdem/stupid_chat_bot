@@ -12,6 +12,7 @@ Complete documentation for the email verification feature in Stupid Chat Bot.
 - [Frontend Components](#frontend-components)
 - [Security Considerations](#security-considerations)
 - [Development vs Production](#development-vs-production)
+- [SMTP Provider Recommendations](#smtp-provider-recommendations)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -415,22 +416,140 @@ This link will expire in 24 hours.
 
 ### Production Mode
 
-When SMTP is configured, emails are sent via SMTP:
+When SMTP is configured, emails are sent via SMTP. See the [SMTP Provider Recommendations](#smtp-provider-recommendations) section for detailed setup.
+
+---
+
+## SMTP Provider Recommendations
+
+Choosing the right SMTP provider is crucial for reliable email delivery. This section analyzes current options (as of January 2025).
+
+### Provider Comparison
+
+```mermaid
+graph TB
+    subgraph Free["Free Tier Options"]
+        R["Resend<br/>3,000/month<br/>⭐ RECOMMENDED"]
+        S2G["SMTP2GO<br/>1,000/month"]
+        B["Brevo<br/>300/day"]
+    end
+
+    subgraph Paid["Pay-as-you-go"]
+        SES["Amazon SES<br/>$0.10/1,000<br/>Best for scale"]
+    end
+
+    subgraph Trial["Trial Only"]
+        SG["SendGrid<br/>60-day trial<br/>⚠️ No free tier"]
+    end
+
+    style R fill:#10b981,color:#fff
+    style SES fill:#f59e0b,color:#fff
+    style SG fill:#ef4444,color:#fff
+```
+
+### Detailed Provider Analysis
+
+| Provider | Free Tier | Daily Limit | Best For | Notes |
+|----------|-----------|-------------|----------|-------|
+| **Resend** | 3,000/month | 100/day | This project | Modern API, React Email support |
+| **SMTP2GO** | 1,000/month | 200/day | Simple needs | Never expires, reliable |
+| **Brevo** | 9,000/month | 300/day | Higher volume | Brevo branding on free |
+| **Amazon SES** | None | Unlimited | Production scale | $0.10/1,000 emails |
+| **SendGrid** | ~~100/day~~ | N/A | ❌ Avoid | Free tier ended July 2025 |
+| **Mailgun** | Trial only | N/A | Not recommended | No permanent free tier |
+
+### Recommended: Resend
+
+[Resend](https://resend.com) is the recommended provider for this project:
+
+**Pros:**
+- Permanent free tier (3,000 emails/month)
+- Modern, developer-focused API
+- React Email integration
+- Clean documentation
+- Simple setup
+
+**Cons:**
+- No analytics on free tier
+- Single domain on free tier
+- Newer service (less mature than incumbents)
+
+**Setup:**
+
+1. Create account at [resend.com](https://resend.com)
+2. Verify your domain (add DNS records)
+3. Get API key from dashboard
+4. Configure environment:
 
 ```bash
-# Production .env
-SMTP_HOST=smtp.sendgrid.net
+# .env for Resend
+SMTP_HOST=smtp.resend.com
 SMTP_PORT=587
-SMTP_USER=apikey
-SMTP_PASSWORD=SG.your-api-key
+SMTP_USER=resend
+SMTP_PASSWORD=re_your_api_key_here
+SMTP_FROM_EMAIL=noreply@yourdomain.com
+SMTP_FROM_NAME=Stupid Chat Bot
+SMTP_USE_TLS=true
+```
+
+### Alternative: SMTP2GO
+
+[SMTP2GO](https://www.smtp2go.com) is a solid alternative:
+
+**Setup:**
+```bash
+# .env for SMTP2GO
+SMTP_HOST=mail.smtp2go.com
+SMTP_PORT=587
+SMTP_USER=your-smtp2go-username
+SMTP_PASSWORD=your-smtp2go-password
 SMTP_FROM_EMAIL=noreply@yourdomain.com
 ```
 
-**Recommended Providers:**
-- SendGrid
-- Mailgun
-- Amazon SES
-- Postmark
+### For Production Scale: Amazon SES
+
+[Amazon SES](https://aws.amazon.com/ses/) offers the lowest cost at scale:
+
+**Pricing:** $0.10 per 1,000 emails (no free tier)
+
+**Setup:**
+```bash
+# .env for Amazon SES
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+SMTP_USER=your-ses-smtp-username
+SMTP_PASSWORD=your-ses-smtp-password
+SMTP_FROM_EMAIL=noreply@yourdomain.com
+```
+
+**Note:** SES requires domain verification and starts in sandbox mode (can only send to verified addresses). Production access requires requesting removal from sandbox.
+
+### Provider Selection Guide
+
+```mermaid
+flowchart TD
+    A[Need SMTP Provider] --> B{Budget?}
+    B -->|Free| C{Volume?}
+    B -->|Paid| D{Scale?}
+
+    C -->|< 3,000/month| E[✅ Resend]
+    C -->|< 1,000/month| F[✅ SMTP2GO]
+    C -->|> 3,000/month| G[Consider paid]
+
+    D -->|High volume| H[✅ Amazon SES<br/>$0.10/1,000]
+    D -->|Moderate| I[✅ Resend Pro<br/>$20/month]
+
+    style E fill:#10b981,color:#fff
+    style F fill:#10b981,color:#fff
+    style H fill:#f59e0b,color:#fff
+    style I fill:#3b82f6,color:#fff
+```
+
+### Important: SendGrid No Longer Free
+
+> ⚠️ **Warning:** SendGrid retired its free tier on July 26, 2025. New accounts only get a 60-day trial. Existing documentation or tutorials referencing SendGrid's free tier are outdated.
+
+If you see old tutorials recommending SendGrid for free email, they are no longer accurate. Use Resend or SMTP2GO instead.
 
 ---
 
@@ -500,4 +619,5 @@ logging.getLogger("app.services.verification_service").setLevel(logging.DEBUG)
 
 | Date | Change |
 |------|--------|
+| 2025-01-12 | Added SMTP provider recommendations (Resend, SMTP2GO, Amazon SES) |
 | 2025-01-12 | Initial implementation (Issue #82) |
