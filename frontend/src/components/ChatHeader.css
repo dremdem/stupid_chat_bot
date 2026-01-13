@@ -313,3 +313,49 @@
 :root[data-theme='dark'] .user-dropdown-item.logout-btn:hover {
   background: #450a0a;
 }
+
+/* Email verification warning */
+.user-dropdown-verification {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verification-warning {
+  font-size: 0.8rem;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.verification-warning::before {
+  content: '⚠️';
+  font-size: 0.9rem;
+}
+
+.resend-verification-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--accent-color, #4f46e5);
+  background: transparent;
+  color: var(--accent-color, #4f46e5);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resend-verification-btn:hover:not(:disabled) {
+  background: var(--accent-color, #4f46e5);
+  color: white;
+}
+
+.resend-verification-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:root[data-theme='dark'] .verification-warning {
+  color: #fbbf24;
+}

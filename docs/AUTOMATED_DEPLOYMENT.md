@@ -279,8 +279,16 @@ cat ~/.ssh/github-actions-stupidbot
 | `JWT_SECRET_KEY` | JWT signing key | |
 | `BACKEND_URL` | Backend URL for OAuth callbacks | `https://stupidbot.dremdem.ru` |
 | `FRONTEND_URL` | Frontend URL for redirects | `https://stupidbot.dremdem.ru` |
+| `SMTP_HOST` | SMTP server hostname (optional) | `smtp.resend.com` |
+| `SMTP_PORT` | SMTP port (optional) | `587` |
+| `SMTP_USER` | SMTP username (optional) | `resend` |
+| `SMTP_PASSWORD` | SMTP password/API key (optional) | `re_xxx...` |
+| `SMTP_FROM_EMAIL` | Sender email address (optional) | `noreply@yourdomain.com` |
+| `SMTP_FROM_NAME` | Sender display name (optional) | `Stupid Chat Bot` |
 
 **Note:** GitHub reserves the `GITHUB_` prefix for its own secrets, so we use `GH_CLIENT_ID` and `GH_CLIENT_SECRET` instead.
+
+**Note:** SMTP settings are optional. If `SMTP_HOST` is not set, verification emails will be logged to console instead of sent. See [Email Verification](./email-verification.md) for SMTP provider recommendations.
 
 **Important:** GitHub OAuth Apps only support ONE callback URL. You need **separate OAuth Apps** for development (localhost) and production. The `GH_CLIENT_ID` and `GH_CLIENT_SECRET` secrets should be from your **production** OAuth App. See [OAuth Setup Guide](./oauth-setup-guide.md#github-two-oauth-apps-required) for details.
 

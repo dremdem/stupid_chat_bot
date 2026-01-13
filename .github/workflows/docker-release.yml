@@ -158,6 +158,14 @@ jobs:
           # URLs
           BACKEND_URL=${{ secrets.BACKEND_URL }}
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+
+          # SMTP (Email) - leave SMTP_HOST empty to disable email sending
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
+          SMTP_FROM_NAME=${{ secrets.SMTP_FROM_NAME }}
           ENVEOF"
 
       - name: Run deployment

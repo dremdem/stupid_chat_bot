@@ -6,13 +6,25 @@ import InputBox from './components/InputBox'
 import TypingIndicator from './components/TypingIndicator'
 import SessionSidebar from './components/SessionSidebar'
 import LoginPrompt from './components/LoginPrompt'
+import VerifyEmail from './components/VerifyEmail'
 import { useAuth } from './contexts/AuthContext'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
 import './App.css'
 
+// Check if we're on the verify-email page
+function getVerificationToken() {
+  const path = window.location.pathname
+  if (path === '/verify-email') {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('token')
+  }
+  return null
+}
+
 function App() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const [verificationToken, setVerificationToken] = useState(getVerificationToken)
   const [messages, setMessages] = useState([])
   const [connectionStatus, setConnectionStatus] = useState('connecting')
   const [isTyping, setIsTyping] = useState(false)
@@ -81,10 +93,17 @@ function App() {
       if (message.type === 'system' && message.system_type === 'connection') {
         if (message.limit_info) {
           setLimitInfo(message.limit_info)
+          // Show verification reminder if email not verified
+          if (message.limit_info.requires_verification) {
+            toast.error('Please verify your email to start chatting. Check your inbox!', {
+              duration: 5000,
+            })
+          }
           // Show modal if limit already exhausted on connection (e.g., page reload)
           // Don't show if user is authenticated (OAuth login completed)
           // Don't show if user already dismissed the modal
-          if (
+          // Don't show for verification-required users (they're logged in, just need to verify)
+          else if (
             !message.limit_info.can_send &&
             message.limit_info.user_role === 'anonymous' &&
             !isAuthenticated &&
@@ -284,6 +303,11 @@ function App() {
 
   // Check if sending is disabled
   const isSendDisabled = connectionStatus !== 'connected' || (limitInfo && !limitInfo.can_send)
+
+  // Handle email verification page
+  if (verificationToken !== null) {
+    return <VerifyEmail token={verificationToken} onComplete={() => setVerificationToken(null)} />
+  }
 
   return (
     <div className="app-container">

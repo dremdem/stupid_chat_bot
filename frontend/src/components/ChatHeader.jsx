@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import toast from 'react-hot-toast'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
+import { resendVerification } from '../services/authApi'
 import './ChatHeader.css'
 
 /**
@@ -28,6 +30,27 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
     setShowUserMenu(false)
     await logout()
   }
+
+  const [resendingVerification, setResendingVerification] = useState(false)
+
+  const handleResendVerification = async () => {
+    try {
+      setResendingVerification(true)
+      const result = await resendVerification()
+      if (result.success) {
+        toast.success(result.message)
+      } else {
+        toast.error(result.message)
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to resend verification email')
+    } finally {
+      setResendingVerification(false)
+    }
+  }
+
+  // Check if user needs email verification
+  const needsVerification = user && user.provider === 'email' && user.is_email_verified === false
 
   // Get user display info
   const getUserDisplay = () => {
@@ -129,6 +152,21 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
                         <span className="user-dropdown-name">{user.display_name}</span>
                       )}
                     </div>
+                    {needsVerification && (
+                      <>
+                        <div className="user-dropdown-divider" />
+                        <div className="user-dropdown-verification">
+                          <span className="verification-warning">Email not verified</span>
+                          <button
+                            className="resend-verification-btn"
+                            onClick={handleResendVerification}
+                            disabled={resendingVerification}
+                          >
+                            {resendingVerification ? 'Sending...' : 'Resend email'}
+                          </button>
+                        </div>
+                      </>
+                    )}
                     <div className="user-dropdown-divider" />
                     <button className="user-dropdown-item logout-btn" onClick={handleLogout}>
                       <span className="dropdown-icon">🚪</span>

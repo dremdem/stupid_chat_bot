@@ -454,3 +454,38 @@ def db_stats(c, days=None):
 
     print("Fetching database statistics...")
     c.run(cmd, pty=True)
+
+
+@task(name="delete-user")
+def delete_user(c, email, dry_run=False):
+    """
+    Delete all data for a user by email address.
+
+    Removes user record and all associated data:
+    - Email verification tokens
+    - Auth sessions (JWT refresh tokens)
+    - Chat messages sent by the user
+    - Chat sessions containing user's messages
+
+    Useful for development/testing to clean up test accounts.
+
+    Args:
+        email: Email address of the user to delete
+        dry_run: Show what would be deleted without actually deleting
+
+    Usage:
+        invoke delete-user --email user@example.com
+        invoke delete-user --email user@example.com --dry-run
+
+    Production:
+        docker exec stupidbot-backend .venv/bin/python -m app.cli.delete_user user@example.com
+    """
+    cmd = f"python -m app.cli.delete_user {email}"
+
+    if dry_run:
+        cmd += " --dry-run"
+        print(f"Dry run: showing what would be deleted for {email}...")
+    else:
+        print(f"Deleting all data for user: {email}...")
+
+    c.run(cmd, pty=True)

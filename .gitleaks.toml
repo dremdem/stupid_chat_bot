@@ -1,0 +1,21 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+[extend]
+# Use the default gitleaks config as base
+useDefault = true
+
+# Allowlist for false positives
+[allowlist]
+description = "Allowlist for documentation example tokens (not real secrets)"
+
+# Allow specific regex patterns that are clearly example/placeholder values
+regexes = [
+    '''abc123def456''',
+    '''<.*-token.*>''',
+]
+
+# Allow specific paths for documentation examples
+paths = [
+    '''docs/email-verification\.md$''',
+]

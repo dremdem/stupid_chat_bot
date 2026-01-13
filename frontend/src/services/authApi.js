@@ -166,3 +166,38 @@ export async function getAuthMethods() {
 
   return response.json()
 }
+
+/**
+ * Verify email using token from verification link.
+ * @param {string} token - Verification token from email link
+ * @returns {Promise<{success: boolean, message: string, user?: object}>}
+ */
+export async function verifyEmail(token) {
+  const response = await fetch(`${API_BASE}/auth/verify-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ token }),
+  })
+
+  return response.json()
+}
+
+/**
+ * Request a new verification email.
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export async function resendVerification() {
+  const response = await fetch(`${API_BASE}/auth/resend-verification`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+
+  if (!response.ok && response.status === 401) {
+    throw new Error('Please log in to resend verification email')
+  }
+
+  return response.json()
+}

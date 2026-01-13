@@ -14,6 +14,7 @@ from app.services.auth_service import AuthService
 from app.services.jwt_service import jwt_service
 from app.services.oauth_service import oauth_service
 from app.services.password_service import validate_password_strength
+from app.services.verification_service import VerificationService
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,27 @@ class AuthMethodsResponse(BaseModel):
 
     oauth_providers: list[str]
     email_password_enabled: bool = True
+
+
+class VerifyEmailRequest(BaseModel):
+    """Request for email verification."""
+
+    token: str
+
+
+class VerifyEmailResponse(BaseModel):
+    """Response for email verification."""
+
+    success: bool
+    message: str
+    user: dict | None = None
+
+
+class ResendVerificationResponse(BaseModel):
+    """Response for resend verification request."""
+
+    success: bool
+    message: str
 
 
 @router.get("/methods", response_model=AuthMethodsResponse)
@@ -151,6 +173,10 @@ async def register(
 
     # Handle post-login tasks (admin promotion, etc.)
     await auth_service.handle_user_login(user)
+
+    # Send verification email (async, don't block registration)
+    verification_service = VerificationService(db)
+    await verification_service.send_verification_email(user)
 
     # Create auth session
     user_agent = request.headers.get("User-Agent")
@@ -468,3 +494,83 @@ async def logout(
     response.delete_cookie("refresh_token", path="/api/auth")
 
     return {"message": "Logged out successfully"}
+
+
+@router.post("/verify-email", response_model=VerifyEmailResponse)
+async def verify_email(
+    data: VerifyEmailRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Verify email using token from verification link.
+
+    Marks user's email as verified if token is valid.
+    """
+    verification_service = VerificationService(db)
+    user = await verification_service.verify_token(data.token)
+
+    if not user:
+        return VerifyEmailResponse(
+            success=False,
+            message="Invalid or expired verification link. Please request a new one.",
+        )
+
+    return VerifyEmailResponse(
+        success=True,
+        message="Email verified successfully!",
+        user=user.to_dict(include_sensitive=True),
+    )
+
+
+@router.post("/resend-verification", response_model=ResendVerificationResponse)
+async def resend_verification(
+    access_token: Annotated[str | None, Cookie()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Resend verification email to the current user.
+
+    Rate-limited to prevent abuse.
+    """
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    user_id = jwt_service.get_user_id_from_token(access_token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_id(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.is_email_verified:
+        return ResendVerificationResponse(
+            success=False,
+            message="Email is already verified.",
+        )
+
+    verification_service = VerificationService(db)
+
+    # Check rate limit
+    can_resend, seconds_remaining = await verification_service.can_resend_verification(user)
+    if not can_resend:
+        return ResendVerificationResponse(
+            success=False,
+            message=f"Please wait {seconds_remaining} seconds before requesting another email.",
+        )
+
+    # Send verification email
+    success = await verification_service.send_verification_email(user)
+
+    if success:
+        return ResendVerificationResponse(
+            success=True,
+            message="Verification email sent! Check your inbox.",
+        )
+    else:
+        return ResendVerificationResponse(
+            success=False,
+            message="Failed to send email. Please try again later.",
+        )
