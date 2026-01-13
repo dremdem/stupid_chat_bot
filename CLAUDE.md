@@ -34,6 +34,22 @@ invoke test      # Run tests (Docker)
 invoke lint      # Ruff linting
 invoke format    # Black formatting
 invoke check     # All checks
+invoke db-stats  # Database statistics
+```
+
+### Admin & User Management
+```bash
+# Promote user to admin
+make make-admin EMAIL=user@example.com
+
+# Demote from admin
+make make-admin EMAIL=user@example.com DEMOTE=1
+
+# Delete user and all data
+make delete-user EMAIL=user@example.com
+
+# Dry run (preview changes)
+make make-admin EMAIL=user@example.com DRY_RUN=1
 ```
 
 ### Frontend Tasks
@@ -104,6 +120,7 @@ Documentation index: See [docs/README.md](./docs/README.md)
 
 - **Architecture & Roadmap**: See [README.md](./README.md)
 - **Documentation Index**: See [docs/README.md](./docs/README.md)
+- **CLI Commands**: See [docs/cli-commands.md](./docs/cli-commands.md)
 - **Deployment Guide**: See [docs/AUTOMATED_DEPLOYMENT.md](./docs/AUTOMATED_DEPLOYMENT.md)
 - **PR Comment Workflows**: See [.claude/workflows/pr-comments.md](.claude/workflows/pr-comments.md)
 - **Git Worktrees**: See [.claude/workflows/git-worktrees.md](.claude/workflows/git-worktrees.md)

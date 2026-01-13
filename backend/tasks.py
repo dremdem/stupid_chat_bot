@@ -489,3 +489,37 @@ def delete_user(c, email, dry_run=False):
         print(f"Deleting all data for user: {email}...")
 
     c.run(cmd, pty=True)
+
+
+@task(name="make-admin")
+def make_admin(c, email, demote=False, dry_run=False):
+    """
+    Promote or demote a user to/from admin role.
+
+    Args:
+        email: Email address of the user
+        demote: Demote user from admin to regular user
+        dry_run: Show what would change without actually modifying
+
+    Usage:
+        invoke make-admin --email user@example.com
+        invoke make-admin --email user@example.com --demote
+        invoke make-admin --email user@example.com --dry-run
+
+    Production:
+        docker exec stupidbot-backend .venv/bin/python -m app.cli.make_admin user@example.com
+    """
+    cmd = f"python -m app.cli.make_admin {email}"
+
+    if demote:
+        cmd += " --demote"
+    if dry_run:
+        cmd += " --dry-run"
+
+    action = "Demoting" if demote else "Promoting"
+    if dry_run:
+        print(f"Dry run: showing what would change for {email}...")
+    else:
+        print(f"{action} user: {email}...")
+
+    c.run(cmd, pty=True)
