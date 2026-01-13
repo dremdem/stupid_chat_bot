@@ -10,6 +10,7 @@ This directory contains technical documentation for the Stupid Chat Bot project.
 - [Deployment](#deployment)
 - [Architecture & Design](#architecture--design)
 - [Development](#development)
+- [Operations](#operations)
 - [Guidelines](#guidelines)
 
 ---
@@ -62,11 +63,16 @@ graph TB
         UV["uv-lock-migration-plan.md"]
     end
 
+    subgraph Ops["Operations Docs"]
+        CLI["cli-commands.md"]
+    end
+
     README --> INDEX
     INDEX --> FEAT
     INDEX --> DEPLOY
     INDEX --> ARCH
     INDEX --> DEV
+    INDEX --> Ops
     FEAT --> OAUTH_PLAN
     FEAT --> OAUTH_TECH
     FEAT --> EMAIL_VER
@@ -75,6 +81,7 @@ graph TB
     ARCH --> TASK
     DEV --> DOCKER
     DEV --> UV
+    Ops --> CLI
 ```
 
 ---
@@ -144,6 +151,22 @@ Documentation for development environment and tooling.
 - Docker development workflow
 - Dependency management
 - Reproducible builds
+
+---
+
+## Operations
+
+Documentation for operational tasks and administration.
+
+| Document | Description |
+|----------|-------------|
+| [cli-commands.md](./cli-commands.md) | CLI commands reference (admin, stats, user management) |
+
+### Key Topics
+- Database statistics
+- User role management (make-admin)
+- User data deletion
+- Production maintenance
 
 ---
 
