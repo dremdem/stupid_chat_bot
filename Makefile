@@ -1,4 +1,4 @@
-.PHONY: help dev build test lint format check clean install ci delete-user
+.PHONY: help dev build test lint format check clean install ci delete-user make-admin
 .PHONY: backend-% frontend-%
 
 # Default target
@@ -84,6 +84,24 @@ ifdef DRY_RUN
 	cd backend && uv run --extra dev-local invoke delete-user --email $(EMAIL) --dry-run
 else
 	cd backend && uv run --extra dev-local invoke delete-user --email $(EMAIL)
+endif
+
+make-admin: ## Promote user to admin (EMAIL=user@example.com [DEMOTE=1] [DRY_RUN=1])
+ifndef EMAIL
+	$(error EMAIL is required. Usage: make make-admin EMAIL=user@example.com)
+endif
+ifdef DRY_RUN
+ifdef DEMOTE
+	cd backend && uv run --extra dev-local invoke make-admin --email $(EMAIL) --demote --dry-run
+else
+	cd backend && uv run --extra dev-local invoke make-admin --email $(EMAIL) --dry-run
+endif
+else
+ifdef DEMOTE
+	cd backend && uv run --extra dev-local invoke make-admin --email $(EMAIL) --demote
+else
+	cd backend && uv run --extra dev-local invoke make-admin --email $(EMAIL)
+endif
 endif
 
 #===============================================================================
