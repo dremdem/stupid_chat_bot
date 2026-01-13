@@ -1,4 +1,4 @@
-.PHONY: help dev build test lint format check clean install ci
+.PHONY: help dev build test lint format check clean install ci delete-user
 .PHONY: backend-% frontend-%
 
 # Default target
@@ -71,6 +71,20 @@ ci: ## Run CI pipeline (matches GitHub Actions)
 	@echo "Running CI pipeline..."
 	cd backend && uv run --extra dev-local invoke ci
 	cd frontend && npm run ci
+
+#===============================================================================
+# Database Management
+#===============================================================================
+
+delete-user: ## Delete user by email (EMAIL=user@example.com [DRY_RUN=1])
+ifndef EMAIL
+	$(error EMAIL is required. Usage: make delete-user EMAIL=user@example.com)
+endif
+ifdef DRY_RUN
+	cd backend && uv run --extra dev-local invoke delete-user --email $(EMAIL) --dry-run
+else
+	cd backend && uv run --extra dev-local invoke delete-user --email $(EMAIL)
+endif
 
 #===============================================================================
 # Wildcard Delegation - Direct Access to Ecosystem Tasks

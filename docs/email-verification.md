@@ -13,6 +13,7 @@ Complete documentation for the email verification feature in Stupid Chat Bot.
 - [Security Considerations](#security-considerations)
 - [Development vs Production](#development-vs-production)
 - [SMTP Provider Recommendations](#smtp-provider-recommendations)
+- [Testing Utilities](#testing-utilities)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -553,6 +554,88 @@ If you see old tutorials recommending SendGrid for free email, they are no longe
 
 ---
 
+## Testing Utilities
+
+### Delete User by Email
+
+When testing the registration and verification flow, you may need to delete test accounts to repeat the process. A CLI command is provided for this purpose.
+
+#### Usage
+
+```bash
+# Via make (recommended)
+make delete-user EMAIL=user@example.com
+
+# Dry run - see what would be deleted
+make delete-user EMAIL=user@example.com DRY_RUN=1
+
+# Via invoke (from backend directory)
+cd backend
+invoke delete-user --email user@example.com
+invoke delete-user --email user@example.com --dry-run
+
+# Direct CLI
+cd backend
+uv run python -m app.cli.delete_user user@example.com
+uv run python -m app.cli.delete_user user@example.com --dry-run
+
+# In Docker
+docker exec stupidbot-backend .venv/bin/python -m app.cli.delete_user user@example.com
+```
+
+#### What Gets Deleted
+
+The command removes all data associated with the user:
+
+| Data Type | Relationship | Deletion |
+|-----------|--------------|----------|
+| User | Primary record | Deleted |
+| EmailVerificationToken | FK to User | CASCADE |
+| UserSession (auth) | FK to User | CASCADE |
+| Messages | FK to User | Deleted |
+| ChatSessions | Contains user's messages | Deleted |
+
+#### Example Output
+
+```
+==================================================
+         USER DATA DELETED
+==================================================
+
+ User: test@example.com
+ ID: 12345678-1234-1234-1234-123456789012
+ Name: Test User
+ Provider: email
+
+ Items affected:
+   Verification tokens: 2
+   Auth sessions:       1
+   Messages:            15
+   Chat sessions:       3
+
+==================================================
+All user data has been deleted!
+```
+
+#### Dry Run Mode
+
+Use `--dry-run` or `DRY_RUN=1` to see what would be deleted without actually deleting:
+
+```
+==================================================
+    DRY RUN - No data will be deleted
+==================================================
+
+ User: test@example.com
+ ID: 12345678-1234-1234-1234-123456789012
+ ...
+
+==================================================
+Run without --dry-run to actually delete
+```
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -619,5 +702,6 @@ logging.getLogger("app.services.verification_service").setLevel(logging.DEBUG)
 
 | Date | Change |
 |------|--------|
+| 2025-01-13 | Added delete-user CLI command for testing |
 | 2025-01-12 | Added SMTP provider recommendations (Resend, SMTP2GO, Amazon SES) |
 | 2025-01-12 | Initial implementation (Issue #82) |
