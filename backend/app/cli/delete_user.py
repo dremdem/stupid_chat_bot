@@ -126,8 +126,16 @@ async def delete_user_data(db: AsyncSession, email: str, dry_run: bool = False) 
     # Delete any remaining messages (shouldn't be any after session deletion)
     await db.execute(delete(Message).where(Message.user_id == user_id))
 
-    # Delete user (cascades to verification tokens and auth sessions)
-    await db.delete(user)
+    # Explicitly delete verification tokens (backref doesn't have cascade config)
+    await db.execute(
+        delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user_id)
+    )
+
+    # Explicitly delete auth sessions (to avoid ORM relationship issues)
+    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
+
+    # Delete user
+    await db.execute(delete(User).where(User.id == user_id))
 
     await db.commit()
 
