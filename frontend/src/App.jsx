@@ -7,6 +7,7 @@ import TypingIndicator from './components/TypingIndicator'
 import SessionSidebar from './components/SessionSidebar'
 import LoginPrompt from './components/LoginPrompt'
 import VerifyEmail from './components/VerifyEmail'
+import AdminUsers from './components/admin/AdminUsers'
 import { useAuth } from './contexts/AuthContext'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
@@ -20,6 +21,11 @@ function getVerificationToken() {
     return params.get('token')
   }
   return null
+}
+
+// Check if we're on the admin users page
+function isAdminUsersPage() {
+  return window.location.pathname === '/admin/users'
 }
 
 function App() {
@@ -307,6 +313,11 @@ function App() {
   // Handle email verification page
   if (verificationToken !== null) {
     return <VerifyEmail token={verificationToken} onComplete={() => setVerificationToken(null)} />
+  }
+
+  // Handle admin users page
+  if (isAdminUsersPage()) {
+    return <AdminUsers />
   }
 
   return (

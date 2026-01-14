@@ -1,0 +1,45 @@
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.role-badge-admin {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.role-badge-unlimited {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.role-badge-user {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+/* Dark mode */
+:root[data-theme='dark'] .role-badge-admin {
+  background: #450a0a;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+:root[data-theme='dark'] .role-badge-unlimited {
+  background: #052e16;
+  color: #86efac;
+  border-color: #14532d;
+}
+
+:root[data-theme='dark'] .role-badge-user {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}

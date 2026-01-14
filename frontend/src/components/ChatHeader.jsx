@@ -167,6 +167,15 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
                         </div>
                       </>
                     )}
+                    {user?.is_admin && (
+                      <>
+                        <div className="user-dropdown-divider" />
+                        <a href="/admin/users" className="user-dropdown-item admin-link">
+                          <span className="dropdown-icon">⚙️</span>
+                          Admin Panel
+                        </a>
+                      </>
+                    )}
                     <div className="user-dropdown-divider" />
                     <button className="user-dropdown-item logout-btn" onClick={handleLogout}>
                       <span className="dropdown-icon">🚪</span>
