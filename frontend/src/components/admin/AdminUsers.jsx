@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { listUsers } from '../../services/adminApi'
 import RoleBadge from './RoleBadge'
+import BlockedBadge from './BlockedBadge'
 import UserEditModal from './UserEditModal'
 import './AdminUsers.css'
 
@@ -186,6 +187,7 @@ function AdminUsers() {
                               (unverified)
                             </span>
                           )}
+                          <BlockedBadge isBlocked={u.is_blocked} />
                         </span>
                       </td>
                       <td>{u.display_name || '-'}</td>

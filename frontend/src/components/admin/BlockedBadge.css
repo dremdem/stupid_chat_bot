@@ -1,0 +1,29 @@
+.blocked-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #dc2626;
+  color: #ffffff;
+  margin-left: 8px;
+  animation: pulse-blocked 2s ease-in-out infinite;
+}
+
+@keyframes pulse-blocked {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Dark mode */
+:root[data-theme='dark'] .blocked-badge {
+  background: #b91c1c;
+  color: #fef2f2;
+}
