@@ -197,11 +197,9 @@ class AuthService:
             await self.db.commit()
             return None
 
+        # Allow blocked users to refresh tokens so they can see their status and log out
         if user.is_blocked:
-            await self.db.delete(session)
-            await self.db.commit()
-            logger.warning(f"Blocked user attempted token refresh: {user.id}")
-            return None
+            logger.info(f"Blocked user refreshing tokens: {user.id}")
 
         # Delete old session (token rotation)
         await self.db.delete(session)
@@ -336,9 +334,10 @@ class AuthService:
             logger.warning(f"Login failed: invalid password for user: {email}")
             return None
 
+        # Allow blocked users to log in so they can see their status and log out
         if user.is_blocked:
-            logger.warning(f"Login failed: user is blocked: {email}")
-            return None
+            logger.info(f"Blocked user logged in with email: {email}")
+        else:
+            logger.info(f"User logged in with email: {email}")
 
-        logger.info(f"User logged in with email: {email}")
         return user

@@ -48,7 +48,7 @@ export async function initiateOAuthLogin(provider, redirectUrl = null) {
 
 /**
  * Refresh access token using refresh token (stored in HTTP-only cookie).
- * @returns {Promise<{user: object, access_token: string}|{blocked: true}|null>}
+ * @returns {Promise<{user: object, access_token: string}|null>}
  */
 export async function refreshTokens() {
   const response = await fetch(`${API_BASE}/auth/refresh`, {
@@ -59,13 +59,6 @@ export async function refreshTokens() {
   if (!response.ok) {
     if (response.status === 401) {
       return null // Not authenticated
-    }
-    // Check if user is blocked
-    if (response.status === 403) {
-      const data = await response.json().catch(() => ({}))
-      if (data.detail === 'User is blocked') {
-        return { blocked: true }
-      }
     }
     throw new Error('Failed to refresh tokens')
   }
@@ -90,7 +83,8 @@ export async function logout() {
 
 /**
  * Get current authenticated user.
- * @returns {Promise<{user: object|null, authenticated: boolean, blocked: boolean}>}
+ * Blocked users are returned as authenticated with is_blocked=true.
+ * @returns {Promise<{user: object|null, authenticated: boolean}>}
  */
 export async function getCurrentUser() {
   const response = await fetch(`${API_BASE}/auth/me`, {
@@ -98,18 +92,10 @@ export async function getCurrentUser() {
   })
 
   if (!response.ok) {
-    // Check if user is blocked (403 with specific message)
-    if (response.status === 403) {
-      const data = await response.json().catch(() => ({}))
-      if (data.detail === 'User is blocked') {
-        return { user: null, authenticated: false, blocked: true }
-      }
-    }
-    return { user: null, authenticated: false, blocked: false }
+    return { user: null, authenticated: false }
   }
 
-  const data = await response.json()
-  return { ...data, blocked: false }
+  return response.json()
 }
 
 /**

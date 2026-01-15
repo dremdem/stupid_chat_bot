@@ -22,7 +22,6 @@ const TOKEN_REFRESH_INTERVAL = 25 * 60 * 1000
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isBlocked, setIsBlocked] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [providers, setProviders] = useState([])
   const [error, setError] = useState(null)
@@ -36,27 +35,17 @@ export function AuthProvider({ children }) {
         setError(null)
 
         // Try to get current user
-        const { user: currentUser, authenticated, blocked } = await getCurrentUser()
+        const { user: currentUser, authenticated } = await getCurrentUser()
 
-        if (blocked) {
-          setIsBlocked(true)
-          setUser(null)
-          setIsAuthenticated(false)
-        } else if (authenticated && currentUser) {
+        if (authenticated && currentUser) {
           setUser(currentUser)
           setIsAuthenticated(true)
-          setIsBlocked(false)
         } else {
           // Try to refresh token
           const refreshResult = await refreshTokens()
-          if (refreshResult && refreshResult.blocked) {
-            setIsBlocked(true)
-            setUser(null)
-            setIsAuthenticated(false)
-          } else if (refreshResult && refreshResult.user) {
+          if (refreshResult && refreshResult.user) {
             setUser(refreshResult.user)
             setIsAuthenticated(true)
-            setIsBlocked(false)
           }
         }
 
@@ -87,12 +76,8 @@ export function AuthProvider({ children }) {
       refreshIntervalRef.current = setInterval(async () => {
         try {
           const result = await refreshTokens()
-          if (result && result.blocked) {
-            // User was blocked
-            setIsBlocked(true)
-            setUser(null)
-            setIsAuthenticated(false)
-          } else if (result && result.user) {
+          if (result && result.user) {
+            // Update user (will include latest is_blocked status)
             setUser(result.user)
           } else {
             // Refresh failed, user needs to re-login
@@ -212,6 +197,9 @@ export function AuthProvider({ children }) {
       setIsLoading(false)
     }
   }, [])
+
+  // Derive isBlocked from user object
+  const isBlocked = user?.is_blocked === true
 
   const value = {
     user,
