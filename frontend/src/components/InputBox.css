@@ -84,3 +84,35 @@
   transform: none;
   box-shadow: none;
 }
+
+/* Blocked user state */
+.input-box.blocked {
+  background: #fef2f2;
+  border-top-color: #fecaca;
+}
+
+.input-box.blocked .message-input {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.input-box.blocked .message-input::placeholder {
+  color: #dc2626;
+}
+
+/* Dark mode for blocked state */
+:root[data-theme='dark'] .input-box.blocked {
+  background: #450a0a;
+  border-top-color: #7f1d1d;
+}
+
+:root[data-theme='dark'] .input-box.blocked .message-input {
+  background: #450a0a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+:root[data-theme='dark'] .input-box.blocked .message-input::placeholder {
+  color: #f87171;
+}

@@ -1,3 +1,38 @@
+/* Blocked user banner */
+.blocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.blocked-banner-icon {
+  font-size: 1.25rem;
+}
+
+.blocked-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blocked-banner-content strong {
+  font-weight: 600;
+}
+
+.blocked-banner-content span {
+  opacity: 0.9;
+  font-size: 0.8rem;
+}
+
+/* Dark mode for blocked banner */
+:root[data-theme='dark'] .blocked-banner {
+  background: #991b1b;
+}
+
 .chat-header {
   display: flex;
   justify-content: space-between;
