@@ -8,6 +8,7 @@ import SessionSidebar from './components/SessionSidebar'
 import LoginPrompt from './components/LoginPrompt'
 import VerifyEmail from './components/VerifyEmail'
 import AdminUsers from './components/admin/AdminUsers'
+import AdminStats from './components/admin/AdminStats'
 import { useAuth } from './contexts/AuthContext'
 import websocketService from './services/websocket'
 import { fetchSessions, createSession, deleteSession } from './services/sessionsApi'
@@ -26,6 +27,11 @@ function getVerificationToken() {
 // Check if we're on the admin users page
 function isAdminUsersPage() {
   return window.location.pathname === '/admin/users'
+}
+
+// Check if we're on the admin stats page
+function isAdminStatsPage() {
+  return window.location.pathname === '/admin/stats'
 }
 
 function App() {
@@ -318,6 +324,11 @@ function App() {
   // Handle admin users page
   if (isAdminUsersPage()) {
     return <AdminUsers />
+  }
+
+  // Handle admin stats page
+  if (isAdminStatsPage()) {
+    return <AdminStats />
   }
 
   return (

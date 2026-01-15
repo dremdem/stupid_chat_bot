@@ -183,8 +183,12 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
                         <>
                           <div className="user-dropdown-divider" />
                           <a href="/admin/users" className="user-dropdown-item admin-link">
-                            <span className="dropdown-icon">⚙️</span>
-                            Admin Panel
+                            <span className="dropdown-icon">👥</span>
+                            User Management
+                          </a>
+                          <a href="/admin/stats" className="user-dropdown-item admin-link">
+                            <span className="dropdown-icon">📊</span>
+                            Statistics
                           </a>
                         </>
                       )}

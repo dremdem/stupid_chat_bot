@@ -97,6 +97,9 @@ function AdminUsers() {
             &larr; Back to Chat
           </button>
           <h1>User Management</h1>
+          <a href="/admin/stats" className="btn btn-nav">
+            Statistics
+          </a>
         </div>
         <div className="admin-header-right">
           <span className="admin-user">

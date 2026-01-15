@@ -1,13 +1,15 @@
-"""Admin API endpoints for user management."""
+"""Admin API endpoints for user management and statistics."""
 
 import logging
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import and_, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.types import Date
 
 from app.database import get_db
 from app.dependencies import require_admin
@@ -92,6 +94,81 @@ class AdminActionResponse(BaseModel):
     success: bool
     message: str
     user: UserDetailResponse | None = None
+
+
+# ============================================================================
+# Statistics Pydantic Models
+# ============================================================================
+
+
+class StatsSummaryResponse(BaseModel):
+    """Response for statistics summary."""
+
+    total_users: int
+    active_users_7d: int
+    total_messages: int
+    messages_today: int
+    messages_7d: int
+    new_users_today: int
+    new_users_7d: int
+
+
+class DailyActivityItem(BaseModel):
+    """Single day activity data."""
+
+    date: str
+    messages: int
+    new_users: int
+
+
+class DailyActivityResponse(BaseModel):
+    """Response for daily activity data."""
+
+    days: int
+    data: list[DailyActivityItem]
+
+
+class TopUserItem(BaseModel):
+    """Top user item."""
+
+    id: str
+    email: str | None
+    display_name: str | None
+    role: str
+    message_count: int
+    last_message_at: str | None
+    created_at: str
+
+
+class TopUsersResponse(BaseModel):
+    """Response for top users."""
+
+    users: list[TopUserItem]
+    total: int
+    days: int
+
+
+class MessageItem(BaseModel):
+    """Message item for user messages list."""
+
+    id: str
+    sender: str
+    content: str
+    created_at: str
+    session_id: str
+
+
+class UserMessagesResponse(BaseModel):
+    """Response for user messages."""
+
+    user_id: str
+    user_email: str | None
+    user_display_name: str | None
+    messages: list[MessageItem]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 # ============================================================================
@@ -361,4 +438,297 @@ async def update_user_message_limit(
         success=True,
         message=f"Message limit updated to {limit_str}",
         user=await user_to_detail_response(user, message_count),
+    )
+
+
+# ============================================================================
+# Statistics Endpoints
+# ============================================================================
+
+
+@router.get("/stats/summary", response_model=StatsSummaryResponse)
+async def get_stats_summary(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get summary statistics for the admin dashboard.
+
+    Returns total users, active users, message counts, etc.
+    Admin only endpoint.
+    """
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    seven_days_ago = now - timedelta(days=7)
+
+    # Total users (excluding anonymous role)
+    total_users_result = await db.execute(
+        select(func.count(User.id)).where(User.role != UserRole.ANONYMOUS.value)
+    )
+    total_users = total_users_result.scalar() or 0
+
+    # Active users in last 7 days (users who sent messages)
+    active_users_result = await db.execute(
+        select(func.count(func.distinct(Message.user_id))).where(
+            and_(
+                Message.user_id.isnot(None),
+                Message.sender == "user",
+                Message.created_at >= seven_days_ago,
+            )
+        )
+    )
+    active_users_7d = active_users_result.scalar() or 0
+
+    # Total messages (user messages only)
+    total_messages_result = await db.execute(
+        select(func.count(Message.id)).where(Message.sender == "user")
+    )
+    total_messages = total_messages_result.scalar() or 0
+
+    # Messages today
+    messages_today_result = await db.execute(
+        select(func.count(Message.id)).where(
+            and_(
+                Message.sender == "user",
+                Message.created_at >= today_start,
+            )
+        )
+    )
+    messages_today = messages_today_result.scalar() or 0
+
+    # Messages in last 7 days
+    messages_7d_result = await db.execute(
+        select(func.count(Message.id)).where(
+            and_(
+                Message.sender == "user",
+                Message.created_at >= seven_days_ago,
+            )
+        )
+    )
+    messages_7d = messages_7d_result.scalar() or 0
+
+    # New users today
+    new_users_today_result = await db.execute(
+        select(func.count(User.id)).where(
+            and_(
+                User.role != UserRole.ANONYMOUS.value,
+                User.created_at >= today_start,
+            )
+        )
+    )
+    new_users_today = new_users_today_result.scalar() or 0
+
+    # New users in last 7 days
+    new_users_7d_result = await db.execute(
+        select(func.count(User.id)).where(
+            and_(
+                User.role != UserRole.ANONYMOUS.value,
+                User.created_at >= seven_days_ago,
+            )
+        )
+    )
+    new_users_7d = new_users_7d_result.scalar() or 0
+
+    return StatsSummaryResponse(
+        total_users=total_users,
+        active_users_7d=active_users_7d,
+        total_messages=total_messages,
+        messages_today=messages_today,
+        messages_7d=messages_7d,
+        new_users_today=new_users_today,
+        new_users_7d=new_users_7d,
+    )
+
+
+@router.get("/stats/daily-activity", response_model=DailyActivityResponse)
+async def get_daily_activity(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+    days: Annotated[int, Query(ge=7, le=90)] = 30,
+):
+    """
+    Get daily activity data for charts.
+
+    Returns message counts and new user registrations per day.
+    Admin only endpoint.
+    """
+    now = datetime.now(timezone.utc)
+    start_date = (now - timedelta(days=days)).date()
+
+    # Get daily message counts
+    messages_query = (
+        select(
+            cast(Message.created_at, Date).label("date"),
+            func.count(Message.id).label("count"),
+        )
+        .where(
+            and_(
+                Message.sender == "user",
+                cast(Message.created_at, Date) >= start_date,
+            )
+        )
+        .group_by(cast(Message.created_at, Date))
+    )
+    messages_result = await db.execute(messages_query)
+    messages_by_date = {row.date: row.count for row in messages_result}
+
+    # Get daily new user counts
+    users_query = (
+        select(
+            cast(User.created_at, Date).label("date"),
+            func.count(User.id).label("count"),
+        )
+        .where(
+            and_(
+                User.role != UserRole.ANONYMOUS.value,
+                cast(User.created_at, Date) >= start_date,
+            )
+        )
+        .group_by(cast(User.created_at, Date))
+    )
+    users_result = await db.execute(users_query)
+    users_by_date = {row.date: row.count for row in users_result}
+
+    # Build response with all days (including zeros)
+    data = []
+    current_date = start_date
+    end_date = now.date()
+    while current_date <= end_date:
+        data.append(
+            DailyActivityItem(
+                date=current_date.isoformat(),
+                messages=messages_by_date.get(current_date, 0),
+                new_users=users_by_date.get(current_date, 0),
+            )
+        )
+        current_date += timedelta(days=1)
+
+    return DailyActivityResponse(days=days, data=data)
+
+
+@router.get("/stats/top-users", response_model=TopUsersResponse)
+async def get_top_users(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+):
+    """
+    Get top active users by message count.
+
+    Admin only endpoint.
+    """
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # Subquery for message counts and last message time
+    message_stats = (
+        select(
+            Message.user_id,
+            func.count(Message.id).label("message_count"),
+            func.max(Message.created_at).label("last_message_at"),
+        )
+        .where(
+            and_(
+                Message.user_id.isnot(None),
+                Message.sender == "user",
+                Message.created_at >= cutoff_date,
+            )
+        )
+        .group_by(Message.user_id)
+        .subquery()
+    )
+
+    # Join with users and order by message count
+    query = (
+        select(
+            User,
+            message_stats.c.message_count,
+            message_stats.c.last_message_at,
+        )
+        .join(message_stats, User.id == message_stats.c.user_id)
+        .order_by(message_stats.c.message_count.desc())
+        .limit(limit)
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    users = [
+        TopUserItem(
+            id=str(row.User.id),
+            email=row.User.email,
+            display_name=row.User.display_name,
+            role=row.User.role,
+            message_count=row.message_count,
+            last_message_at=row.last_message_at.isoformat() if row.last_message_at else None,
+            created_at=row.User.created_at.isoformat(),
+        )
+        for row in rows
+    ]
+
+    return TopUsersResponse(users=users, total=len(users), days=days)
+
+
+@router.get("/stats/user-messages/{user_id}", response_model=UserMessagesResponse)
+async def get_user_messages(
+    user_id: UUID,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+):
+    """
+    Get message history for a specific user (read-only).
+
+    Admin only endpoint for reviewing user conversations.
+    """
+    # Verify user exists
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    # Get total message count
+    count_result = await db.execute(
+        select(func.count(Message.id)).where(Message.user_id == user_id)
+    )
+    total = count_result.scalar() or 0
+
+    # Get paginated messages
+    offset = (page - 1) * page_size
+    messages_result = await db.execute(
+        select(Message)
+        .where(Message.user_id == user_id)
+        .order_by(Message.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    messages = messages_result.scalars().all()
+
+    message_items = [
+        MessageItem(
+            id=str(msg.id),
+            sender=msg.sender,
+            content=msg.content,
+            created_at=msg.created_at.isoformat(),
+            session_id=str(msg.session_id),
+        )
+        for msg in messages
+    ]
+
+    total_pages = (total + page_size - 1) // page_size
+
+    return UserMessagesResponse(
+        user_id=str(user.id),
+        user_email=user.email,
+        user_display_name=user.display_name,
+        messages=message_items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
     )
