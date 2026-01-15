@@ -47,6 +47,7 @@ graph TB
         OAUTH_PLAN["oauth-implementation-plan.md"]
         OAUTH_TECH["oauth-technical-details.md"]
         EMAIL_VER["email-verification.md"]
+        ADMIN["admin-dashboard.md"]
     end
 
     subgraph Deploy["Deployment Docs"]
@@ -76,6 +77,7 @@ graph TB
     FEAT --> OAUTH_PLAN
     FEAT --> OAUTH_TECH
     FEAT --> EMAIL_VER
+    FEAT --> ADMIN
     DEPLOY --> PLAN
     DEPLOY --> AUTO
     ARCH --> TASK
@@ -96,12 +98,13 @@ Documentation for planned and implemented features.
 | [oauth-technical-details.md](./oauth-technical-details.md) | OAuth 2.0 technical details (populated during implementation) | Placeholder |
 | [oauth-setup-guide.md](./oauth-setup-guide.md) | OAuth provider setup instructions | Active |
 | [email-verification.md](./email-verification.md) | Email verification system documentation | Active |
+| [admin-dashboard.md](./admin-dashboard.md) | Admin dashboard and user management | Active |
 
 ### Key Topics
 - OAuth 2.0 (Google, GitHub, Facebook)
 - Email/password authentication with verification
 - User tiers and message limits
-- Admin panel
+- Admin dashboard and user management
 
 ---
 

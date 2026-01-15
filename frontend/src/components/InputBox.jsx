@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { useAuth } from '../contexts/AuthContext'
 import './InputBox.css'
 
 const MAX_CHARS = 2000
@@ -8,6 +9,7 @@ const MAX_CHARS = 2000
  * InputBox component - handles user message input
  */
 function InputBox({ onSendMessage, disabled }) {
+  const { isBlocked } = useAuth()
   const [message, setMessage] = useState('')
   const textareaRef = useRef(null)
 
@@ -45,9 +47,17 @@ function InputBox({ onSendMessage, disabled }) {
 
   const charCount = message.length
   const isNearLimit = charCount > MAX_CHARS * 0.8
+  const isDisabled = disabled || isBlocked
+
+  const getPlaceholder = () => {
+    if (isBlocked) {
+      return 'You cannot send messages - your account is blocked'
+    }
+    return 'Type your message... (Enter to send, Shift+Enter for new line)'
+  }
 
   return (
-    <form className="input-box" onSubmit={handleSubmit}>
+    <form className={`input-box ${isBlocked ? 'blocked' : ''}`} onSubmit={handleSubmit}>
       <div className="input-wrapper">
         <textarea
           ref={textareaRef}
@@ -55,15 +65,15 @@ function InputBox({ onSendMessage, disabled }) {
           value={message}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
-          disabled={disabled}
+          placeholder={getPlaceholder()}
+          disabled={isDisabled}
           rows={1}
         />
         <div className="input-footer">
           <span className={`char-counter ${isNearLimit ? 'warning' : ''}`}>
             {charCount}/{MAX_CHARS}
           </span>
-          <button type="submit" className="send-button" disabled={disabled || !message.trim()}>
+          <button type="submit" className="send-button" disabled={isDisabled || !message.trim()}>
             Send
           </button>
         </div>

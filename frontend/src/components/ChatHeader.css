@@ -1,3 +1,38 @@
+/* Blocked user banner */
+.blocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.blocked-banner-icon {
+  font-size: 1.25rem;
+}
+
+.blocked-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blocked-banner-content strong {
+  font-weight: 600;
+}
+
+.blocked-banner-content span {
+  opacity: 0.9;
+  font-size: 0.8rem;
+}
+
+/* Dark mode for blocked banner */
+:root[data-theme='dark'] .blocked-banner {
+  background: #991b1b;
+}
+
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -258,6 +293,15 @@
   background: #fef2f2;
 }
 
+.user-dropdown-item.admin-link {
+  text-decoration: none;
+  color: #4f46e5;
+}
+
+.user-dropdown-item.admin-link:hover {
+  background: #eef2ff;
+}
+
 .dropdown-icon {
   font-size: 1rem;
 }
@@ -312,6 +356,14 @@
 
 :root[data-theme='dark'] .user-dropdown-item.logout-btn:hover {
   background: #450a0a;
+}
+
+:root[data-theme='dark'] .user-dropdown-item.admin-link {
+  color: #a5b4fc;
+}
+
+:root[data-theme='dark'] .user-dropdown-item.admin-link:hover {
+  background: #1e1b4b;
 }
 
 /* Email verification warning */

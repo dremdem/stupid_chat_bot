@@ -142,6 +142,7 @@ class User(Base, TimestampMixin):
             "display_name": self.display_name,
             "avatar_url": self.avatar_url,
             "role": self.role,
+            "is_admin": self.is_admin,
             "context_window_size": self.context_window_size,
             "is_blocked": self.is_blocked,
             "created_at": self.created_at.isoformat(),

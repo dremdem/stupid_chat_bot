@@ -48,7 +48,7 @@ export async function initiateOAuthLogin(provider, redirectUrl = null) {
 
 /**
  * Refresh access token using refresh token (stored in HTTP-only cookie).
- * @returns {Promise<{user: object, access_token: string}>}
+ * @returns {Promise<{user: object, access_token: string}|null>}
  */
 export async function refreshTokens() {
   const response = await fetch(`${API_BASE}/auth/refresh`, {
@@ -83,6 +83,7 @@ export async function logout() {
 
 /**
  * Get current authenticated user.
+ * Blocked users are returned as authenticated with is_blocked=true.
  * @returns {Promise<{user: object|null, authenticated: boolean}>}
  */
 export async function getCurrentUser() {

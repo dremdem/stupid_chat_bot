@@ -77,6 +77,7 @@ export function AuthProvider({ children }) {
         try {
           const result = await refreshTokens()
           if (result && result.user) {
+            // Update user (will include latest is_blocked status)
             setUser(result.user)
           } else {
             // Refresh failed, user needs to re-login
@@ -197,9 +198,13 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Derive isBlocked from user object
+  const isBlocked = user?.is_blocked === true
+
   const value = {
     user,
     isAuthenticated,
+    isBlocked,
     isLoading,
     providers,
     error,

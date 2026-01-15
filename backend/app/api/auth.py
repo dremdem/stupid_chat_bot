@@ -130,9 +130,7 @@ async def get_current_user(
     if not user:
         return UserResponse(user=None, authenticated=False)
 
-    if user.is_blocked:
-        return UserResponse(user=None, authenticated=False)
-
+    # Return blocked users as authenticated so they can see their status and log out
     return UserResponse(
         user=user.to_dict(include_sensitive=True),
         authenticated=True,
@@ -357,13 +355,9 @@ async def oauth_callback(
     auth_service = AuthService(db)
     user = await auth_service.get_or_create_oauth_user(user_info)
 
-    # Check if user is blocked
+    # Allow blocked users to authenticate so they can see their status and log out
     if user.is_blocked:
-        error_redirect = f"{settings.frontend_url}/login?error=account_blocked"
-        return Response(
-            status_code=302,
-            headers={"Location": error_redirect},
-        )
+        logger.info(f"Blocked user logged in via OAuth: {user.email or user.id}")
 
     # Handle post-login tasks (admin promotion, etc.)
     await auth_service.handle_user_login(user)
