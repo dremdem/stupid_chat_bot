@@ -108,7 +108,7 @@ function AdminStats() {
                 <input
                   type="checkbox"
                   checked={sendToAllAdmins}
-                  onChange={(e) => setSendToAllAdmins(e.target.checked)}
+                  onChange={e => setSendToAllAdmins(e.target.checked)}
                 />
                 Send to all admins
               </label>
@@ -121,7 +121,7 @@ function AdminStats() {
                   id="report-email"
                   type="email"
                   value={reportEmail}
-                  onChange={(e) => setReportEmail(e.target.value)}
+                  onChange={e => setReportEmail(e.target.value)}
                   placeholder="user@example.com"
                   className="form-input"
                 />
@@ -133,7 +133,7 @@ function AdminStats() {
               <select
                 id="report-days"
                 value={reportDays}
-                onChange={(e) => setReportDays(Number(e.target.value))}
+                onChange={e => setReportDays(Number(e.target.value))}
                 className="form-select"
               >
                 <option value={7}>Last 7 days</option>

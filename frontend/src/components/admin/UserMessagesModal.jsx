@@ -93,7 +93,9 @@ function UserMessagesModal({ user, onClose }) {
                   </div>
                   <div className="message-content">{msg.content}</div>
                   <div className="message-meta">
-                    <span className="message-session">Session: {msg.session_id.slice(0, 8)}...</span>
+                    <span className="message-session">
+                      Session: {msg.session_id.slice(0, 8)}...
+                    </span>
                   </div>
                 </div>
               ))}

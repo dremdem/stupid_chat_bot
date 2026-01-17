@@ -109,24 +109,20 @@ function ActivityChart() {
             })
 
             return (
-              <div key={index} className="chart-bar-group" title={`${dateLabel}: ${item.messages} messages, ${item.new_users} new users`}>
+              <div
+                key={index}
+                className="chart-bar-group"
+                title={`${dateLabel}: ${item.messages} messages, ${item.new_users} new users`}
+              >
                 <div className="bar-container">
-                  <div
-                    className="bar bar-messages"
-                    style={{ height: `${messageHeight}%` }}
-                  >
+                  <div className="bar bar-messages" style={{ height: `${messageHeight}%` }}>
                     {item.messages > 0 && messageHeight > 15 && (
                       <span className="bar-value">{item.messages}</span>
                     )}
                   </div>
                   {showUsers && item.new_users > 0 && (
-                    <div
-                      className="bar bar-users"
-                      style={{ height: `${userHeight}%` }}
-                    >
-                      {userHeight > 15 && (
-                        <span className="bar-value">{item.new_users}</span>
-                      )}
+                    <div className="bar bar-users" style={{ height: `${userHeight}%` }}>
+                      {userHeight > 15 && <span className="bar-value">{item.new_users}</span>}
                     </div>
                   )}
                 </div>
