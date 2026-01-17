@@ -134,35 +134,46 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 40px;
 }
 
 .form-row label {
+  display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-primary, #1a1a1a);
+  color: #1a1a1a;
+  line-height: 1.5;
 }
 
 .checkbox-label {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  min-height: 24px;
 }
 
 .checkbox-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
-  accent-color: var(--accent-color, #4f46e5);
+  min-width: 18px;
+  min-height: 18px;
+  accent-color: #4f46e5;
+  flex-shrink: 0;
 }
 
 .form-input,
 .form-select {
+  display: block;
+  width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
   font-size: 0.875rem;
-  background: var(--bg-primary, #fff);
-  color: var(--text-primary, #1a1a1a);
+  background: #ffffff;
+  color: #1a1a1a;
+  min-height: 42px;
   transition: border-color 0.15s;
 }
 
@@ -250,6 +261,11 @@
 
 :root[data-theme='dark'] .form-row label {
   color: #f0f0f0;
+  display: block;
+}
+
+:root[data-theme='dark'] .checkbox-label {
+  color: #f0f0f0;
 }
 
 :root[data-theme='dark'] .form-input,
@@ -257,6 +273,11 @@
   background: #2a2a2a;
   border-color: #444;
   color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .btn-send-report {
+  background: #4f46e5;
+  color: #ffffff;
 }
 
 :root[data-theme='dark'] .report-message.success {
