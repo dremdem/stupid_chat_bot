@@ -523,3 +523,48 @@ def make_admin(c, email, demote=False, dry_run=False):
         print(f"{action} user: {email}...")
 
     c.run(cmd, pty=True)
+
+
+@task(name="admin-report")
+def admin_report(c, email=None, days=7, all_admins=False, dry_run=False):
+    """
+    Generate and send admin activity report.
+
+    Sends an email with activity statistics including user counts,
+    message counts, top active users, and more.
+
+    Args:
+        email: Recipient email address
+        days: Number of days to include in report (default: 7)
+        all_admins: Send report to all admin users
+        dry_run: Preview report data without sending email
+
+    Usage:
+        invoke admin-report --email user@example.com
+        invoke admin-report --email user@example.com --days 30
+        invoke admin-report --all-admins
+        invoke admin-report --email user@example.com --dry-run
+
+    Production:
+        docker exec stupidbot-backend .venv/bin/python -m app.cli.admin_report user@example.com
+    """
+    cmd = "python -m app.cli.admin_report"
+
+    if email:
+        cmd += f" {email}"
+
+    cmd += f" --days {days}"
+
+    if all_admins:
+        cmd += " --all-admins"
+    if dry_run:
+        cmd += " --dry-run"
+
+    if dry_run:
+        print(f"Previewing {days}-day admin report...")
+    elif all_admins:
+        print(f"Sending {days}-day report to all admins...")
+    elif email:
+        print(f"Sending {days}-day report to {email}...")
+
+    c.run(cmd, pty=True)

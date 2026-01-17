@@ -1,4 +1,4 @@
-.PHONY: help dev build test lint format check clean install ci delete-user make-admin
+.PHONY: help dev build test lint format check clean install ci delete-user make-admin admin-report
 .PHONY: backend-% frontend-%
 
 # Default target
@@ -103,6 +103,19 @@ else
 	cd backend && uv run --extra dev-local invoke make-admin --email $(EMAIL)
 endif
 endif
+
+admin-report: ## Send admin report (EMAIL=user@example.com or ALL_ADMINS=1 [DAYS=7] [DRY_RUN=1])
+ifndef EMAIL
+ifndef ALL_ADMINS
+	$(error EMAIL or ALL_ADMINS is required. Usage: make admin-report EMAIL=user@example.com)
+endif
+endif
+	@CMD="cd backend && uv run --extra dev-local invoke admin-report"; \
+	if [ -n "$(EMAIL)" ]; then CMD="$$CMD --email $(EMAIL)"; fi; \
+	if [ -n "$(DAYS)" ]; then CMD="$$CMD --days $(DAYS)"; fi; \
+	if [ -n "$(ALL_ADMINS)" ]; then CMD="$$CMD --all-admins"; fi; \
+	if [ -n "$(DRY_RUN)" ]; then CMD="$$CMD --dry-run"; fi; \
+	eval $$CMD
 
 #===============================================================================
 # Wildcard Delegation - Direct Access to Ecosystem Tasks

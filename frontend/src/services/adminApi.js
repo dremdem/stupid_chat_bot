@@ -186,3 +186,32 @@ export async function getUserMessages(userId, { page = 1, pageSize = 20 } = {}) 
 
   return handleResponse(response)
 }
+
+// ============================================================================
+// Reports API
+// ============================================================================
+
+/**
+ * Send admin activity report via email.
+ * @param {object} options - Report options
+ * @param {string} [options.email] - Recipient email (required if not allAdmins)
+ * @param {number} [options.days=7] - Days to include in report
+ * @param {boolean} [options.allAdmins=false] - Send to all admin users
+ * @returns {Promise<{success: boolean, message: string, details?: object}>}
+ */
+export async function sendAdminReport({ email, days = 7, allAdmins = false } = {}) {
+  const response = await fetch(`${API_BASE}/reports/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      email,
+      days,
+      all_admins: allAdmins,
+    }),
+  })
+
+  return handleResponse(response)
+}
