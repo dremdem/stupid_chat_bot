@@ -101,6 +101,115 @@
   margin: 0 auto;
 }
 
+/* Report section */
+.report-section {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.report-section h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.section-description {
+  margin: 0 0 20px 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color, #4f46e5);
+}
+
+.form-input,
+.form-select {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #1a1a1a);
+  transition: border-color 0.15s;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent-color, #4f46e5);
+}
+
+.report-message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.report-message.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.report-message.error {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-send-report {
+  padding: 10px 20px;
+  background: var(--accent-color, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  align-self: flex-start;
+}
+
+.btn-send-report:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-send-report:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Dark mode */
 :root[data-theme='dark'] .admin-stats {
   background: #121212;
@@ -125,6 +234,39 @@
 
 :root[data-theme='dark'] .admin-loading {
   color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .report-section {
+  background: #1e1e1e;
+}
+
+:root[data-theme='dark'] .report-section h2 {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .section-description {
+  color: #a0a0a0;
+}
+
+:root[data-theme='dark'] .form-row label {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .form-input,
+:root[data-theme='dark'] .form-select {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .report-message.success {
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+:root[data-theme='dark'] .report-message.error {
+  background: #7f1d1d;
+  color: #fca5a5;
 }
 
 /* Responsive */

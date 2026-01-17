@@ -1,7 +1,7 @@
 """Admin API endpoints for user management and statistics."""
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from uuid import UUID
 
@@ -15,6 +15,7 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.message import Message
 from app.models.user import User, UserRole
+from app.services.admin_report_service import AdminReportService
 
 logger = logging.getLogger(__name__)
 
@@ -731,4 +732,68 @@ async def get_user_messages(
         page=page,
         page_size=page_size,
         total_pages=total_pages,
+    )
+
+
+# ============================================================================
+# Report Pydantic Models
+# ============================================================================
+
+
+class SendReportRequest(BaseModel):
+    """Request to send admin report."""
+
+    email: str | None = Field(None, description="Recipient email (required if not all_admins)")
+    days: int = Field(default=7, ge=1, le=365, description="Days to include in report")
+    all_admins: bool = Field(default=False, description="Send to all admin users")
+
+
+class SendReportResponse(BaseModel):
+    """Response for send report endpoint."""
+
+    success: bool
+    message: str
+    details: dict | None = None
+
+
+# ============================================================================
+# Report Endpoints
+# ============================================================================
+
+
+@router.post("/reports/send", response_model=SendReportResponse)
+async def send_admin_report(
+    data: SendReportRequest,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Send admin activity report via email.
+
+    Can send to a specific email or all admin users.
+    Admin only endpoint.
+    """
+    service = AdminReportService(db)
+
+    if data.all_admins:
+        result = await service.send_report_to_all_admins(data.days)
+        logger.info(f"Admin {admin.email} sent report to all admins ({data.days} days)")
+        return SendReportResponse(
+            success=result["success"],
+            message=result["message"],
+            details=result.get("details"),
+        )
+
+    if not data.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must specify email or set all_admins=true",
+        )
+
+    success, message = await service.generate_and_send_report(data.email, data.days)
+    logger.info(f"Admin {admin.email} sent report to {data.email} ({data.days} days)")
+
+    return SendReportResponse(
+        success=success,
+        message=message,
     )
