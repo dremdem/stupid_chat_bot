@@ -36,9 +36,7 @@ async def send_scheduled_admin_report():
     try:
         async with async_session_maker() as db:
             # Get schedule to determine report period
-            result = await db.execute(
-                select(ReportSchedule).where(ReportSchedule.id == 1)
-            )
+            result = await db.execute(select(ReportSchedule).where(ReportSchedule.id == 1))
             schedule = result.scalar_one_or_none()
 
             if not schedule or not schedule.enabled:
@@ -67,20 +65,14 @@ async def send_scheduled_admin_report():
             # Send to each subscriber
             success_count = 0
             for user in subscribers:
-                success, message = await service.generate_and_send_report(
-                    user.email, days
-                )
+                success, message = await service.generate_and_send_report(user.email, days)
                 if success:
                     success_count += 1
                     logger.info(f"Scheduled report sent to {user.email}")
                 else:
-                    logger.error(
-                        f"Failed to send scheduled report to {user.email}: {message}"
-                    )
+                    logger.error(f"Failed to send scheduled report to {user.email}: {message}")
 
-            logger.info(
-                f"Scheduled report job complete: {success_count}/{len(subscribers)} sent"
-            )
+            logger.info(f"Scheduled report job complete: {success_count}/{len(subscribers)} sent")
 
     except Exception as e:
         logger.exception(f"Error in scheduled admin report job: {e}")
@@ -121,9 +113,7 @@ async def _load_schedule_from_db() -> ReportSchedule | None:
     """Load schedule configuration from database."""
     try:
         async with async_session_maker() as db:
-            result = await db.execute(
-                select(ReportSchedule).where(ReportSchedule.id == 1)
-            )
+            result = await db.execute(select(ReportSchedule).where(ReportSchedule.id == 1))
             return result.scalar_one_or_none()
     except Exception as e:
         logger.error(f"Failed to load schedule from database: {e}")

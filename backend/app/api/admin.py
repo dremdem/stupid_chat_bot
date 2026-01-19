@@ -996,9 +996,7 @@ async def get_report_subscribers(
     Admin only endpoint.
     """
     result = await db.execute(
-        select(User)
-        .where(User.receive_reports == True)  # noqa: E712
-        .order_by(User.email)
+        select(User).where(User.receive_reports == True).order_by(User.email)  # noqa: E712
     )
     users = result.scalars().all()
 

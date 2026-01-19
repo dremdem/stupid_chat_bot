@@ -36,7 +36,6 @@ function AdminStats() {
   const [savingSchedule, setSavingSchedule] = useState(false)
   const [scheduleMessage, setScheduleMessage] = useState(null)
   const [subscribers, setSubscribers] = useState([])
-  const [loadingSubscribers, setLoadingSubscribers] = useState(false)
 
   // Load schedule and subscribers on mount
   useEffect(() => {
