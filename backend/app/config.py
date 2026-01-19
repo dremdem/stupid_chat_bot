@@ -79,6 +79,14 @@ class Settings(BaseSettings):
     email_verification_token_expire_hours: int = 24
     email_verification_resend_cooldown_seconds: int = 60
 
+    # Scheduled Admin Reports (Issue #91)
+    admin_report_enabled: bool = False  # Enable scheduled reports
+    admin_report_schedule: str = "weekly"  # weekly, daily, or disabled
+    admin_report_day: str = "mon"  # Day of week (mon, tue, wed, thu, fri, sat, sun)
+    admin_report_hour: int = 9  # Hour to send (0-23, UTC)
+    admin_report_minute: int = 0  # Minute to send (0-59)
+    admin_report_recipients: str = ""  # Comma-separated emails, empty = all admins
+
     @property
     def database_url(self) -> str:
         """Get database URL for SQLAlchemy."""
@@ -93,6 +101,13 @@ class Settings(BaseSettings):
     def is_email_configured(self) -> bool:
         """Check if SMTP is configured for sending emails."""
         return bool(self.smtp_host and self.smtp_user and self.smtp_password)
+
+    @property
+    def admin_report_recipients_list(self) -> list[str]:
+        """Parse admin report recipients from comma-separated string."""
+        if not self.admin_report_recipients:
+            return []
+        return [email.strip() for email in self.admin_report_recipients.split(",") if email.strip()]
 
     @property
     def selected_model(self) -> str:

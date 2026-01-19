@@ -202,3 +202,30 @@ export async function resendVerification() {
 
   return response.json()
 }
+
+/**
+ * Update user preferences.
+ * @param {object} preferences - Preferences to update
+ * @param {boolean} [preferences.receive_reports] - Opt in/out of scheduled reports
+ * @returns {Promise<{success: boolean, message: string, user: object}>}
+ */
+export async function updatePreferences(preferences) {
+  const response = await fetch(`${API_BASE}/auth/preferences`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(preferences),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Please log in to update preferences')
+    }
+    const data = await response.json()
+    throw new Error(data.detail || 'Failed to update preferences')
+  }
+
+  return response.json()
+}

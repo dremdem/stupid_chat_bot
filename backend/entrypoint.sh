@@ -10,11 +10,15 @@ echo "Database path: $DB_PATH"
 if [ -f "$DB_PATH" ]; then
     echo "Database file exists, checking schema state..."
 
-    # Check and fix schema directly with SQL (bypass alembic for legacy fixes)
+    # Check if alembic_version table exists and fix legacy issues
     .venv/bin/python << EOF
 import sqlite3
 conn = sqlite3.connect("$DB_PATH")
 cursor = conn.cursor()
+
+# Check if alembic_version table exists
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'")
+has_alembic = cursor.fetchone() is not None
 
 # Check if messages.user_id column exists
 cursor.execute("PRAGMA table_info(messages)")
@@ -30,17 +34,26 @@ else:
 
 conn.commit()
 conn.close()
-EOF
 
-    # Now stamp at head since schema is correct
-    echo "Ensuring alembic is at head..."
-    .venv/bin/python -m alembic stamp head 2>&1 || echo "Stamp returned non-zero"
-    echo "Alembic stamp complete."
+# Return whether alembic table exists (0 = exists, 1 = not exists)
+exit(0 if has_alembic else 1)
+EOF
+    HAS_ALEMBIC=$?
+
+    # Only stamp if alembic wasn't tracking this database
+    if [ $HAS_ALEMBIC -ne 0 ]; then
+        echo "No alembic version table found, stamping at base migration..."
+        # Stamp at the first migration that includes users table
+        .venv/bin/python -m alembic stamp b2c3d4e5f6a7 2>&1 || echo "Stamp returned non-zero"
+        echo "Alembic stamp complete."
+    else
+        echo "Alembic version table exists, will run normal migrations."
+    fi
 else
     echo "No existing database file, will be created by migrations."
 fi
 
-# Run Alembic migrations (should be no-op if already at head)
+# Run Alembic migrations
 echo "Running database migrations..."
 .venv/bin/python -m alembic upgrade head
 

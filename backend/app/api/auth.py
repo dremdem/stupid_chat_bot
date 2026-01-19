@@ -93,6 +93,20 @@ class ResendVerificationResponse(BaseModel):
     message: str
 
 
+class UpdatePreferencesRequest(BaseModel):
+    """Request for updating user preferences."""
+
+    receive_reports: bool | None = None
+
+
+class UpdatePreferencesResponse(BaseModel):
+    """Response for user preferences update."""
+
+    success: bool
+    message: str
+    user: dict
+
+
 @router.get("/methods", response_model=AuthMethodsResponse)
 async def get_auth_methods():
     """Get all available authentication methods."""
@@ -568,3 +582,48 @@ async def resend_verification(
             success=False,
             message="Failed to send email. Please try again later.",
         )
+
+
+@router.patch("/preferences", response_model=UpdatePreferencesResponse)
+async def update_preferences(
+    data: UpdatePreferencesRequest,
+    access_token: Annotated[str | None, Cookie()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update user preferences.
+
+    Currently supports:
+    - receive_reports: Opt in/out of scheduled admin reports
+    """
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    user_id = jwt_service.get_user_id_from_token(access_token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_id(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.is_blocked:
+        raise HTTPException(status_code=403, detail="Account is blocked")
+
+    # Update preferences
+    updated = False
+    if data.receive_reports is not None:
+        user.receive_reports = data.receive_reports
+        updated = True
+
+    if updated:
+        await db.commit()
+        await db.refresh(user)
+
+    return UpdatePreferencesResponse(
+        success=True,
+        message="Preferences updated successfully",
+        user=user.to_dict(include_sensitive=True),
+    )

@@ -120,6 +120,13 @@ class User(Base, TimestampMixin):
         default=False,
     )
 
+    # Report subscription (Issue #91)
+    receive_reports: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
     # Relationships
     auth_sessions: Mapped[list["UserSession"]] = relationship(
         "UserSession",
@@ -156,6 +163,7 @@ class User(Base, TimestampMixin):
                     "provider": self.provider,
                     "is_email_verified": self.is_email_verified,
                     "message_limit": self.message_limit,
+                    "receive_reports": self.receive_reports,
                 }
             )
 

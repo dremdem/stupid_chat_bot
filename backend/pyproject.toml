@@ -21,6 +21,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "httpx>=0.27.0",
     "bcrypt>=5.0.0",
+    # Scheduler (Issue #91)
+    "apscheduler>=3.10.0",
 ]
 
 [project.optional-dependencies]
