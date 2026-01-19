@@ -135,7 +135,7 @@ def _update_schedule_cache(schedule: ReportSchedule | None):
         _current_schedule = None
 
 
-def start_scheduler():
+async def start_scheduler():
     """
     Initialize and start the scheduler.
 
@@ -144,15 +144,8 @@ def start_scheduler():
     """
     global scheduler
 
-    import asyncio
-
     # Load schedule from database
-    try:
-        loop = asyncio.get_event_loop()
-        schedule = loop.run_until_complete(_load_schedule_from_db())
-    except RuntimeError:
-        # No event loop running, create a new one
-        schedule = asyncio.run(_load_schedule_from_db())
+    schedule = await _load_schedule_from_db()
 
     if not schedule:
         logger.info("No report schedule configured in database")

@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
     # Start scheduler for background tasks
     logger.info("Starting scheduler...")
-    start_scheduler()
+    await start_scheduler()
 
     yield
 
