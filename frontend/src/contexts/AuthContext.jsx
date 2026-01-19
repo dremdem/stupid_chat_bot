@@ -201,6 +201,11 @@ export function AuthProvider({ children }) {
   // Derive isBlocked from user object
   const isBlocked = user?.is_blocked === true
 
+  // Update user data (used when preferences change)
+  const updateUser = useCallback(newUserData => {
+    setUser(newUserData)
+  }, [])
+
   const value = {
     user,
     isAuthenticated,
@@ -214,6 +219,7 @@ export function AuthProvider({ children }) {
     logout,
     refresh,
     isProviderAvailable,
+    updateUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
