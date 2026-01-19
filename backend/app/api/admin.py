@@ -797,3 +797,25 @@ async def send_admin_report(
         success=success,
         message=message,
     )
+
+
+# ============================================================================
+# Scheduler Status Endpoint
+# ============================================================================
+
+
+@router.get("/scheduler/status")
+async def get_scheduler_status(
+    admin: User = Depends(require_admin),
+):
+    """
+    Get the status of the scheduled reports scheduler.
+
+    Returns information about whether scheduled reports are enabled,
+    the schedule configuration, and the next scheduled run time.
+
+    Admin only endpoint.
+    """
+    from app.services.scheduler_service import get_scheduler_status
+
+    return get_scheduler_status()

@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import admin, auth, history, sessions, websocket
 from app.config import settings
 from app.database import close_db, init_db
+from app.services.scheduler_service import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,17 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database...")
     await init_db()
     logger.info("Database initialized")
+
+    # Start scheduler for background tasks
+    logger.info("Starting scheduler...")
+    start_scheduler()
+
     yield
+
     # Shutdown
+    logger.info("Stopping scheduler...")
+    stop_scheduler()
+
     logger.info("Closing database connections...")
     await close_db()
     logger.info("Database connections closed")
