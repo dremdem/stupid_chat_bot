@@ -14,6 +14,7 @@ from sqlalchemy.types import Date
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.message import Message
+from app.models.report_schedule import ReportSchedule
 from app.models.user import User, UserRole
 from app.services.admin_report_service import AdminReportService
 
@@ -805,7 +806,7 @@ async def send_admin_report(
 
 
 @router.get("/scheduler/status")
-async def get_scheduler_status(
+async def get_scheduler_status_endpoint(
     admin: User = Depends(require_admin),
 ):
     """
@@ -819,3 +820,199 @@ async def get_scheduler_status(
     from app.services.scheduler_service import get_scheduler_status
 
     return get_scheduler_status()
+
+
+# ============================================================================
+# Report Schedule Management (Database-backed)
+# ============================================================================
+
+
+class ReportScheduleResponse(BaseModel):
+    """Response for report schedule."""
+
+    enabled: bool
+    schedule_type: str
+    day_of_week: str
+    hour: int
+    minute: int
+    updated_at: str | None
+    next_run: str | None = None
+    subscribed_users_count: int = 0
+
+
+class UpdateScheduleRequest(BaseModel):
+    """Request to update report schedule."""
+
+    enabled: bool | None = None
+    schedule_type: str | None = Field(None, pattern="^(weekly|daily|disabled)$")
+    day_of_week: str | None = Field(None, pattern="^(mon|tue|wed|thu|fri|sat|sun)$")
+    hour: int | None = Field(None, ge=0, le=23)
+    minute: int | None = Field(None, ge=0, le=59)
+
+
+@router.get("/reports/schedule", response_model=ReportScheduleResponse)
+async def get_report_schedule(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get current report schedule configuration.
+
+    Admin only endpoint.
+    """
+    from app.services.scheduler_service import get_scheduler_status
+
+    # Get or create schedule record
+    result = await db.execute(select(ReportSchedule).where(ReportSchedule.id == 1))
+    schedule = result.scalar_one_or_none()
+
+    if not schedule:
+        # Create default schedule
+        schedule = ReportSchedule(id=1)
+        db.add(schedule)
+        await db.commit()
+        await db.refresh(schedule)
+
+    # Count users subscribed to reports
+    count_result = await db.execute(
+        select(func.count(User.id)).where(User.receive_reports == True)  # noqa: E712
+    )
+    subscribed_count = count_result.scalar() or 0
+
+    # Get next run time from scheduler
+    scheduler_status = get_scheduler_status()
+
+    return ReportScheduleResponse(
+        enabled=schedule.enabled,
+        schedule_type=schedule.schedule_type,
+        day_of_week=schedule.day_of_week,
+        hour=schedule.hour,
+        minute=schedule.minute,
+        updated_at=schedule.updated_at.isoformat() if schedule.updated_at else None,
+        next_run=scheduler_status.get("next_run"),
+        subscribed_users_count=subscribed_count,
+    )
+
+
+@router.put("/reports/schedule", response_model=ReportScheduleResponse)
+async def update_report_schedule(
+    data: UpdateScheduleRequest,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update report schedule configuration.
+
+    Admin only endpoint.
+    """
+    from app.services.scheduler_service import reschedule_reports
+
+    # Get or create schedule record
+    result = await db.execute(select(ReportSchedule).where(ReportSchedule.id == 1))
+    schedule = result.scalar_one_or_none()
+
+    if not schedule:
+        schedule = ReportSchedule(id=1)
+        db.add(schedule)
+
+    # Update fields if provided
+    if data.enabled is not None:
+        schedule.enabled = data.enabled
+    if data.schedule_type is not None:
+        schedule.schedule_type = data.schedule_type
+    if data.day_of_week is not None:
+        schedule.day_of_week = data.day_of_week
+    if data.hour is not None:
+        schedule.hour = data.hour
+    if data.minute is not None:
+        schedule.minute = data.minute
+
+    schedule.updated_by = admin.id
+
+    await db.commit()
+    await db.refresh(schedule)
+
+    # Reschedule the job with new settings
+    reschedule_reports(schedule)
+
+    logger.info(
+        f"Admin {admin.email} updated report schedule: "
+        f"enabled={schedule.enabled}, type={schedule.schedule_type}, "
+        f"day={schedule.day_of_week}, time={schedule.hour:02d}:{schedule.minute:02d}"
+    )
+
+    # Count subscribed users
+    count_result = await db.execute(
+        select(func.count(User.id)).where(User.receive_reports == True)  # noqa: E712
+    )
+    subscribed_count = count_result.scalar() or 0
+
+    # Get updated scheduler status
+    from app.services.scheduler_service import get_scheduler_status
+
+    scheduler_status = get_scheduler_status()
+
+    return ReportScheduleResponse(
+        enabled=schedule.enabled,
+        schedule_type=schedule.schedule_type,
+        day_of_week=schedule.day_of_week,
+        hour=schedule.hour,
+        minute=schedule.minute,
+        updated_at=schedule.updated_at.isoformat() if schedule.updated_at else None,
+        next_run=scheduler_status.get("next_run"),
+        subscribed_users_count=subscribed_count,
+    )
+
+
+# ============================================================================
+# Report Subscribers Management
+# ============================================================================
+
+
+class ReportSubscriberItem(BaseModel):
+    """User subscribed to reports."""
+
+    id: str
+    email: str | None
+    display_name: str | None
+    role: str
+
+
+class ReportSubscribersResponse(BaseModel):
+    """Response for report subscribers list."""
+
+    subscribers: list[ReportSubscriberItem]
+    total: int
+
+
+@router.get("/reports/subscribers", response_model=ReportSubscribersResponse)
+async def get_report_subscribers(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get list of users subscribed to receive reports.
+
+    Admin only endpoint.
+    """
+    result = await db.execute(
+        select(User)
+        .where(User.receive_reports == True)  # noqa: E712
+        .order_by(User.email)
+    )
+    users = result.scalars().all()
+
+    subscribers = [
+        ReportSubscriberItem(
+            id=str(user.id),
+            email=user.email,
+            display_name=user.display_name,
+            role=user.role,
+        )
+        for user in users
+    ]
+
+    return ReportSubscribersResponse(
+        subscribers=subscribers,
+        total=len(subscribers),
+    )

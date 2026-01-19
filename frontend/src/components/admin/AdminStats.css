@@ -221,6 +221,57 @@
   cursor: not-allowed;
 }
 
+/* Time inputs */
+.time-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-select {
+  width: auto;
+  min-width: 70px;
+}
+
+.time-separator {
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+/* Subscribers info */
+.subscribers-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #0369a1;
+}
+
+.subscribers-info.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.subscriber-count {
+  font-weight: 500;
+}
+
+.subscriber-list {
+  color: #0c4a6e;
+}
+
+/* Next run info */
+.next-run-info {
+  padding: 10px 12px;
+  background: #ecfdf5;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #065f46;
+}
+
 /* Dark mode */
 :root[data-theme='dark'] .admin-stats {
   background: #121212;
@@ -288,6 +339,29 @@
 :root[data-theme='dark'] .report-message.error {
   background: #7f1d1d;
   color: #fca5a5;
+}
+
+:root[data-theme='dark'] .time-separator {
+  color: #f0f0f0;
+}
+
+:root[data-theme='dark'] .subscribers-info {
+  background: #1e3a5f;
+  color: #7dd3fc;
+}
+
+:root[data-theme='dark'] .subscribers-info.warning {
+  background: #78350f;
+  color: #fcd34d;
+}
+
+:root[data-theme='dark'] .subscriber-list {
+  color: #bae6fd;
+}
+
+:root[data-theme='dark'] .next-run-info {
+  background: #064e3b;
+  color: #a7f3d0;
 }
 
 /* Responsive */

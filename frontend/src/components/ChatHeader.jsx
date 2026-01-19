@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import toast from 'react-hot-toast'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
-import { resendVerification } from '../services/authApi'
+import { resendVerification, updatePreferences } from '../services/authApi'
 import './ChatHeader.css'
 
 /**
@@ -11,9 +11,10 @@ import './ChatHeader.css'
  */
 function ChatHeader({ status, limitInfo, onSignInClick }) {
   const { theme, toggleTheme } = useTheme()
-  const { user, isAuthenticated, isBlocked, logout, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isBlocked, logout, updateUser, isLoading: authLoading } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef(null)
+  const [updatingReports, setUpdatingReports] = useState(false)
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -46,6 +47,22 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
       toast.error(err.message || 'Failed to resend verification email')
     } finally {
       setResendingVerification(false)
+    }
+  }
+
+  const handleToggleReports = async () => {
+    try {
+      setUpdatingReports(true)
+      const newValue = !user?.receive_reports
+      const result = await updatePreferences({ receive_reports: newValue })
+      if (result.success && result.user) {
+        updateUser(result.user)
+        toast.success(newValue ? 'Subscribed to reports' : 'Unsubscribed from reports')
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to update preferences')
+    } finally {
+      setUpdatingReports(false)
     }
   }
 
@@ -177,6 +194,25 @@ function ChatHeader({ status, limitInfo, onSignInClick }) {
                               {resendingVerification ? 'Sending...' : 'Resend email'}
                             </button>
                           </div>
+                        </>
+                      )}
+                      {user?.email && (
+                        <>
+                          <div className="user-dropdown-divider" />
+                          <button
+                            className="user-dropdown-item reports-toggle"
+                            onClick={handleToggleReports}
+                            disabled={updatingReports}
+                          >
+                            <span className="dropdown-icon">📧</span>
+                            <span className="toggle-label">
+                              {updatingReports
+                                ? 'Updating...'
+                                : user?.receive_reports
+                                  ? 'Unsubscribe from reports'
+                                  : 'Subscribe to reports'}
+                            </span>
+                          </button>
                         </>
                       )}
                       {user?.is_admin && (

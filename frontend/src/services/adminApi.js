@@ -215,3 +215,50 @@ export async function sendAdminReport({ email, days = 7, allAdmins = false } = {
 
   return handleResponse(response)
 }
+
+/**
+ * Get report schedule configuration.
+ * @returns {Promise<{enabled: boolean, schedule_type: string, day_of_week: string, hour: number, minute: number, next_run?: string}>}
+ */
+export async function getReportSchedule() {
+  const response = await fetch(`${API_BASE}/reports/schedule`, {
+    credentials: 'include',
+  })
+
+  return handleResponse(response)
+}
+
+/**
+ * Update report schedule configuration.
+ * @param {object} schedule - Schedule settings
+ * @param {boolean} schedule.enabled - Whether scheduling is enabled
+ * @param {string} schedule.schedule_type - 'weekly', 'daily', or 'disabled'
+ * @param {string} [schedule.day_of_week] - Day of week for weekly reports
+ * @param {number} schedule.hour - Hour (0-23) UTC
+ * @param {number} schedule.minute - Minute (0-59)
+ * @returns {Promise<{success: boolean, message: string, schedule: object}>}
+ */
+export async function updateReportSchedule(schedule) {
+  const response = await fetch(`${API_BASE}/reports/schedule`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(schedule),
+  })
+
+  return handleResponse(response)
+}
+
+/**
+ * Get list of users subscribed to reports.
+ * @returns {Promise<{subscribers: Array<{id: string, email: string, display_name: string}>, total: number}>}
+ */
+export async function getReportSubscribers() {
+  const response = await fetch(`${API_BASE}/reports/subscribers`, {
+    credentials: 'include',
+  })
+
+  return handleResponse(response)
+}
