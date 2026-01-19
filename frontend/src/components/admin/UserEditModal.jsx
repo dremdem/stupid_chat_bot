@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { updateUserRole, updateUserBlock, updateUserLimit } from '../../services/adminApi'
+import {
+  updateUserRole,
+  updateUserBlock,
+  updateUserLimit,
+  updateUserReports,
+} from '../../services/adminApi'
 import RoleBadge from './RoleBadge'
 import './UserEditModal.css'
 
@@ -10,6 +15,7 @@ function UserEditModal({ user, onClose, onUpdate }) {
   const [messageLimit, setMessageLimit] = useState(
     user.message_limit !== null ? user.message_limit.toString() : ''
   )
+  const [receiveReports, setReceiveReports] = useState(user.receive_reports || false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -48,6 +54,11 @@ function UserEditModal({ user, onClose, onUpdate }) {
         updatedUser = result.user
       }
 
+      if (receiveReports !== (user.receive_reports || false)) {
+        const result = await updateUserReports(user.id, receiveReports)
+        updatedUser = result.user
+      }
+
       onUpdate(updatedUser)
       onClose()
     } catch (err) {
@@ -60,7 +71,8 @@ function UserEditModal({ user, onClose, onUpdate }) {
   const hasChanges =
     role !== user.role ||
     isBlocked !== user.is_blocked ||
-    (messageLimit === '' ? null : parseInt(messageLimit, 10)) !== user.message_limit
+    (messageLimit === '' ? null : parseInt(messageLimit, 10)) !== user.message_limit ||
+    receiveReports !== (user.receive_reports || false)
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -116,6 +128,21 @@ function UserEditModal({ user, onClose, onUpdate }) {
             <span className="help-text">Blocked users cannot access the application</span>
           </div>
 
+          {user.email && (
+            <div className="form-group">
+              <label htmlFor="receiveReports">
+                <input
+                  type="checkbox"
+                  id="receiveReports"
+                  checked={receiveReports}
+                  onChange={e => setReceiveReports(e.target.checked)}
+                />
+                Subscribe to Reports
+              </label>
+              <span className="help-text">Receive scheduled admin reports via email</span>
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="messageLimit">Message Limit</label>
             <input
@@ -157,6 +184,7 @@ UserEditModal.propTypes = {
     is_blocked: PropTypes.bool.isRequired,
     message_limit: PropTypes.number,
     message_count: PropTypes.number.isRequired,
+    receive_reports: PropTypes.bool,
   }).isRequired,
   onClose: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,

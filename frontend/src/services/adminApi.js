@@ -119,6 +119,25 @@ export async function updateUserLimit(userId, messageLimit) {
   return handleResponse(response)
 }
 
+/**
+ * Update user report subscription.
+ * @param {string} userId - User ID
+ * @param {boolean} receiveReports - Whether user should receive reports
+ * @returns {Promise<{success: boolean, message: string, user: object}>}
+ */
+export async function updateUserReports(userId, receiveReports) {
+  const response = await fetch(`${API_BASE}/users/${userId}/reports`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ receive_reports: receiveReports }),
+  })
+
+  return handleResponse(response)
+}
+
 // ============================================================================
 // Statistics API
 // ============================================================================

@@ -39,6 +39,7 @@ class UserListItem(BaseModel):
     is_blocked: bool
     is_email_verified: bool
     message_limit: int | None
+    receive_reports: bool
     message_count: int
     created_at: str
     updated_at: str
@@ -66,6 +67,7 @@ class UserDetailResponse(BaseModel):
     is_blocked: bool
     is_email_verified: bool
     message_limit: int | None
+    receive_reports: bool
     context_window_size: int
     message_count: int
     created_at: str
@@ -88,6 +90,12 @@ class UpdateLimitRequest(BaseModel):
     """Request to update message limit."""
 
     message_limit: int | None = Field(None, ge=0, le=10000)
+
+
+class UpdateReportsRequest(BaseModel):
+    """Request to update report subscription."""
+
+    receive_reports: bool
 
 
 class AdminActionResponse(BaseModel):
@@ -201,6 +209,7 @@ async def user_to_detail_response(user: User, message_count: int) -> UserDetailR
         is_blocked=user.is_blocked,
         is_email_verified=user.is_email_verified,
         message_limit=user.message_limit,
+        receive_reports=user.receive_reports,
         context_window_size=user.context_window_size,
         message_count=message_count,
         created_at=user.created_at.isoformat(),
@@ -271,6 +280,7 @@ async def list_users(
                 is_blocked=user.is_blocked,
                 is_email_verified=user.is_email_verified,
                 message_limit=user.message_limit,
+                receive_reports=user.receive_reports,
                 message_count=message_count,
                 created_at=user.created_at.isoformat(),
                 updated_at=user.updated_at.isoformat(),
@@ -342,6 +352,11 @@ async def update_user_role(
 
     old_role = user.role
     user.role = data.role
+
+    # Auto-enable receive_reports when promoting to admin
+    if data.role == UserRole.ADMIN.value and old_role != UserRole.ADMIN.value:
+        user.receive_reports = True
+
     await db.commit()
     await db.refresh(user)
 
@@ -439,6 +454,50 @@ async def update_user_message_limit(
     return AdminActionResponse(
         success=True,
         message=f"Message limit updated to {limit_str}",
+        user=await user_to_detail_response(user, message_count),
+    )
+
+
+@router.patch("/users/{user_id}/reports", response_model=AdminActionResponse)
+async def update_user_report_subscription(
+    user_id: UUID,
+    data: UpdateReportsRequest,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update a user's report subscription status.
+
+    Admin only endpoint.
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    # Require email to receive reports
+    if data.receive_reports and not user.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User must have an email to receive reports",
+        )
+
+    old_value = user.receive_reports
+    user.receive_reports = data.receive_reports
+    await db.commit()
+    await db.refresh(user)
+
+    message_count = await get_user_message_count(db, user.id)
+    action = "subscribed to" if data.receive_reports else "unsubscribed from"
+    logger.info(f"Admin {admin.email} {action} reports for user {user.email}")
+
+    return AdminActionResponse(
+        success=True,
+        message=f"User {action} reports" if old_value != data.receive_reports else "No change",
         user=await user_to_detail_response(user, message_count),
     )
 
