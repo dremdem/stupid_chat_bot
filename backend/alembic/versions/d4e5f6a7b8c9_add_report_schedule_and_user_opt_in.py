@@ -23,9 +23,7 @@ def table_exists(table_name: str) -> bool:
     """Check if a table exists in the database."""
     conn = op.get_bind()
     result = conn.execute(
-        sa.text(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name=:name"
-        ),
+        sa.text("SELECT name FROM sqlite_master WHERE type='table' AND name=:name"),
         {"name": table_name},
     )
     return result.fetchone() is not None
@@ -45,9 +43,7 @@ def upgrade() -> None:
         op.create_table(
             "report_schedule",
             sa.Column("id", sa.Integer(), nullable=False),
-            sa.Column(
-                "enabled", sa.Boolean(), nullable=False, server_default="false"
-            ),
+            sa.Column("enabled", sa.Boolean(), nullable=False, server_default="false"),
             sa.Column(
                 "schedule_type",
                 sa.String(length=20),
